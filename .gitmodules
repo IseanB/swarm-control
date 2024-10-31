@@ -1,0 +1,3 @@
+[submodule "motion_planning"]
+	path = motion_planning
+	url = https://github.com/RuslanAgishev/motion_planning.git
