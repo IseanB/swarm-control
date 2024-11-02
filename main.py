@@ -85,7 +85,7 @@ class Environment:
     def update_occ_map(self, new_pos):
       # if(new_pos[0]<0 or new_pos[1]<0 or new_pos[0]>=self.size[0] or new_pos[1]>=self.size[0]):
       try:
-        self.occupancy_map[new_pos] = 1
+        self.occupancy_map[new_pos] += 1
       except:
         print("ERROR: occupancy_map update FAILED ")
       #   print(new_pos)
@@ -96,14 +96,14 @@ class Environment:
     
     def display_occ_map(self):
       plt.figure(figsize=(10, 8))
-      sns.heatmap(self.occupancy_map, cmap="YlGnBu", cbar=False)
-      plt.title("Occupied Map(Dark = Visited, Light = Non-Visted)")
+      sns.heatmap(np.rot90(self.occupancy_map), cmap="PRGn", cbar=False)
+      plt.suptitle("Occupied Map")
       plt.show()
     
     def save_occ_map(self):
       plt.figure(figsize=(10, 8))
-      sns.heatmap(np.rot90(self.occupancy_map), cmap="YlGnBu", cbar=False)
-      plt.title("Occupied Map(Dark = Visited, Light = Non-Visted)")
+      sns.heatmap(np.rot90(self.occupancy_map), cmap="PRGn", cbar=False)
+      plt.title("Occupied Map")
       plt.savefig(visualization_dir + "occ_map.png")
 
 
@@ -199,7 +199,8 @@ class Swarm:
         #print(x_pos)
         #print(y_pos)
         ax.plot(x_pos, y_pos)
-        fig.savefig(visualization_dir + "path.png")
+      fig.suptitle("Swarm Paths")
+      fig.savefig(visualization_dir + "path.png")
 
 
     def animate(self, interval=200, filename='animation.gif'):
@@ -228,6 +229,7 @@ class Swarm:
           return lines
 
       # Create the animation
+      fig.suptitle("Animated Swarm Paths")
       anim = animation.FuncAnimation(fig, animate_func, init_func=init,
                                       frames=len(self.actors[0].get_path()), interval=interval, blit=True)
 
@@ -243,6 +245,5 @@ rand_env.random_obstacles(num_obstacles, max_vertices, max_size)
 test_swarm = Swarm(num_actors, rand_env, init = 'random')
 test_swarm.random_walk(100)
 test_swarm.plot()
-# test_swarm.savePlot()
-test_swarm.animate() # this causes a lot of slowdowns
 rand_env.save_occ_map()
+test_swarm.animate() # this causes a lot of slowdowns
