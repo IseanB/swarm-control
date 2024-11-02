@@ -6,6 +6,7 @@ import matplotlib.animation as animation
 from matplotlib import rc
 rc('animation', html='jshtml')
 from scipy.spatial import ConvexHull
+import time
 
 # Global param.
 
@@ -239,11 +240,20 @@ class Swarm:
       plt.close(fig)
 
 
+start_time = time.time()
+
+### Main Code
 rand_env = Environment((width, height))
 rand_env.random_obstacles(num_obstacles, max_vertices, max_size)
 
 test_swarm = Swarm(num_actors, rand_env, init = 'random')
 test_swarm.random_walk(100)
+
+end_time = time.time()
+execution_time = end_time - start_time
+print(f"Execution time: {execution_time} seconds")
+
+#Visualizations
 test_swarm.plot()
 rand_env.save_occ_map()
 test_swarm.animate() # this causes a lot of slowdowns
