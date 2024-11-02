@@ -102,7 +102,7 @@ class Environment:
     
     def save_occ_map(self):
       plt.figure(figsize=(10, 8))
-      sns.heatmap(self.occupancy_map, cmap="YlGnBu", cbar=False)
+      sns.heatmap(np.rot90(self.occupancy_map), cmap="YlGnBu", cbar=False)
       plt.title("Occupied Map(Dark = Visited, Light = Non-Visted)")
       plt.savefig(visualization_dir + "occ_map.png")
 
