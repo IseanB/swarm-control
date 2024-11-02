@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -43,6 +45,7 @@ class Environment:
     def __init__(self, size=(8,8)):
       self.size = size
       self.obstacles = []
+      self.occupancy_map = np.zeros(size)
 
     def get_size(self):
       return self.size
@@ -79,6 +82,31 @@ class Environment:
     def set_obstacles(self, obstacles):
       self.obstacles = obstacles
 
+    def update_occ_map(self, new_pos):
+      # if(new_pos[0]<0 or new_pos[1]<0 or new_pos[0]>=self.size[0] or new_pos[1]>=self.size[0]):
+      try:
+        self.occupancy_map[new_pos] = 1
+      except:
+        print("ERROR: occupancy_map update FAILED ")
+      #   print(new_pos)
+      #   print(self.size)
+
+    def return_occ_map(self):
+      return (self.occupancy_map)
+    
+    def display_occ_map(self):
+      plt.figure(figsize=(10, 8))
+      sns.heatmap(self.occupancy_map, cmap="YlGnBu", cbar=False)
+      plt.title("Occupied Map(Dark = Visited, Light = Non-Visted)")
+      plt.show()
+    
+    def save_occ_map(self):
+      plt.figure(figsize=(10, 8))
+      sns.heatmap(self.occupancy_map, cmap="YlGnBu", cbar=False)
+      plt.title("Occupied Map(Dark = Visited, Light = Non-Visted)")
+      plt.savefig(visualization_dir + "occ_map.png")
+
+
 
 class Swarm:
     """
@@ -111,7 +139,7 @@ class Swarm:
 
     def is_valid_move(self, position):
       size = self.environment.get_size()
-      if self.obstacle_collision(position) or position[0] < 0 or position[1] < 0 or position[0] > size[0] or position[1] > size[1]:
+      if self.obstacle_collision(position) or position[0] < 0 or position[1] < 0 or position[0] >= size[0] or position[1] >= size[1]:
         return False
       for bot in self.actors:
         if bot.get_position() == position:
@@ -147,6 +175,8 @@ class Swarm:
           #print("\n")
           if self.is_valid_move(new_pos):
             bot.move(new_pos)
+            self.environment.update_occ_map(new_pos)
+
 
     def draw_map(self):
       fig, ax = plt.subplots()
@@ -215,5 +245,4 @@ test_swarm.random_walk(100)
 test_swarm.plot()
 # test_swarm.savePlot()
 test_swarm.animate() # this causes a lot of slowdowns
-     
-
+rand_env.save_occ_map()
