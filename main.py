@@ -16,8 +16,9 @@ num_actors = 20
 num_obstacles = 15
 max_vertices = 10
 max_size = 10
+robot_search_radius = 1 # defined a circle around each robot that is considered "explored"
 visualization_dir = "visual_results/"
-
+np.random.seed(1)
 
 class Survivor:
     """
@@ -102,10 +103,24 @@ class Environment:
     def set_obstacles(self, obstacles):
       self.obstacles = obstacles
 
-    def update_occ_map(self, new_pos):
+    def update_occ_map(self, new_pos, radius):
       # if(new_pos[0]<0 or new_pos[1]<0 or new_pos[0]>=self.size[0] or new_pos[1]>=self.size[0]):
       try:
-        self.occupancy_map[new_pos] += 1
+        x, y = new_pos
+        size_x, size_y = self.size
+        
+        # Define bounds within the radius, ensuring they stay within the occupancy map limits
+        x_min = max(0, x - radius)
+        x_max = min(size_x, x + radius + 1)
+        y_min = max(0, y - radius)
+        y_max = min(size_y, y + radius + 1)
+        
+        # Iterate over each cell within the defined bounds and update the occupancy map
+        for i in range(x_min, x_max):
+            for j in range(y_min, y_max):
+                # Check if the cell is within the specified radius from new_pos
+                if (i - x) ** 2 + (j - y) ** 2 <= radius ** 2:
+                    self.occupancy_map[i, j] += 1
       except:
         print("ERROR: occupancy_map update FAILED ")
       #   print(new_pos)
@@ -167,6 +182,7 @@ class Swarm:
     def __init__(self, num_actors, environment, init):
       self.environment = environment
       self.num_actors = num_actors
+      self.survivors_found = 0
       self.actors = []
       next_pos = 0
       if init == 'close':
@@ -215,9 +231,22 @@ class Swarm:
                 inside = not inside
       return inside
 
-    
+    def detect_survivors(self, range=1):
+        """
+        Checks if any robot is within a specified range of a survivor and marks them as found.
+        """
+        for bot in self.actors:
+            bot_pos = bot.get_position()
+            for survivor in self.environment.get_survivors():
+                if not survivor.is_found():
+                    survivor_pos = survivor.get_position()
+                    distance = np.linalg.norm(np.array(bot_pos) - np.array(survivor_pos))
+                    if distance <= range:
+                        survivor.mark_as_found()
+                        self.survivors_found += 1
+                        # print(f"Survivor found at {survivor_pos} by robot at {bot_pos}.")
 
-    def random_walk(self, steps=100):
+    def random_walk(self, steps=100, search_range=1):
       for _ in range(steps):
         for bot in self.actors:
           current_pos = bot.get_position()
@@ -227,7 +256,8 @@ class Swarm:
           #print("\n")
           if self.is_valid_move(new_pos):
             bot.move(new_pos)
-            self.environment.update_occ_map(new_pos)
+            self.environment.update_occ_map(new_pos, search_range)
+        self.detect_survivors(range = search_range)
 
 
     def draw_map(self):
@@ -397,7 +427,7 @@ rand_env.add_survivors(5, (width/5, height/2), 15)
 rand_env.add_survivors(10, (width/2, height/5), 20)
 
 test_swarm = Swarm(num_actors, rand_env, init = 'random')
-test_swarm.random_walk(200)
+test_swarm.random_walk(200,robot_search_radius)
 
 end_time = time.time()
 execution_time = end_time - start_time
@@ -407,7 +437,7 @@ print(f"Execution time: {execution_time} seconds")
 visualization = Visualizer(rand_env, test_swarm)
 visualization.save_occ_map()  # Generates occ_map.png
 visualization.save_paths() # Generates path.png
-visualization.animate_swarm() # Generates animation.gif # this causes a lot of slowdowns
+# visualization.animate_swarm() # Generates animation.gif # this causes a lot of slowdowns
 
 # test_swarm.plot() # Generates path.png
 # rand_env.save_occ_map() # Generates occ_map.png
