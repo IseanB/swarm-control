@@ -10,14 +10,32 @@ import time
 
 # Global param.
 
-width = 100
-height = 100
-num_actors = 10
-num_obstacles = 10
-max_vertices = 7
+width = 200
+height = 200
+num_actors = 20
+num_obstacles = 15
+max_vertices = 10
 max_size = 10
 visualization_dir = "visual_results/"
 
+
+class Survivor:
+    """
+    Represents a survivor in the environment. Survivors have positions and a status indicating
+    whether they have been found by a robot.
+    """
+    def __init__(self, position):
+        self.position = position
+        self.status = "not found"
+
+    def get_position(self):
+        return self.position
+
+    def is_found(self):
+        return self.status == "found"
+
+    def mark_as_found(self):
+        self.status = "found"
 
 class Robot:
     """
@@ -46,6 +64,7 @@ class Environment:
     def __init__(self, size=(8,8)):
       self.size = size
       self.obstacles = []
+      self.survivors = []
       self.occupancy_map = np.zeros(size)
 
     def get_size(self):
@@ -107,7 +126,38 @@ class Environment:
       plt.title("Occupied Map")
       plt.savefig(visualization_dir + "occ_map.png")
 
+    def obstacle_collision(self, position):
+      """
+      Determines whether a point is inside an obstacle.
+      """
+      x, y = position
+      inside = False
 
+      for obstacle in self.obstacles:
+        for i in range(len(obstacle)):
+          x1, y1 = obstacle[i]
+          x2, y2 = obstacle[(i+1) % len(obstacle)]
+          if (y > min(y1, y2)) and (y <= max(y1, y2)) and (x <= max(x1, x2)):
+            if y1 != y2:
+              xinters = (y - y1) * (x2 - x1) / (y2 - y1) + x1
+              if xinters > x:
+                inside = not inside
+      return inside
+
+    def add_survivors(self, num_survivors, centroid_point=(width/2, height/2), std_dev=1.0):
+      for _ in range(num_survivors):
+        while True:
+          # Generate a position based on a Gaussian distribution around the centroid
+          x = int(np.random.normal(centroid_point[0], std_dev))
+          y = int(np.random.normal(centroid_point[1], std_dev))
+          
+          # Ensure the generated position is within the environment boundaries and not inside an obstacle
+          if 0 <= x < self.size[0] and 0 <= y < self.size[1] and not self.obstacle_collision((x, y)):
+            self.survivors.append(Survivor((x, y)))
+            break
+      
+    def get_survivors(self):
+        return self.survivors
 
 class Swarm:
     """
@@ -165,6 +215,7 @@ class Swarm:
                 inside = not inside
       return inside
 
+    
 
     def random_walk(self, steps=100):
       for _ in range(steps):
@@ -238,6 +289,103 @@ class Swarm:
       anim.save(visualization_dir + filename, writer='ffmpeg')
       anim
       plt.close(fig)
+  
+class Visualizer:
+    """
+    Handles all visualization-related functionalities.
+    """
+    def __init__(self, environment, swarm, visualization_dir=visualization_dir):
+        self.environment = environment
+        self.swarm = swarm
+        self.visualization_dir = visualization_dir
+
+    def display_occ_map(self):
+        plt.figure(figsize=(10, 8))
+        sns.heatmap(np.rot90(self.environment.return_occ_map()), cmap="PRGn", cbar=False)
+        plt.suptitle("Occupied Map")
+        plt.show()
+
+    def save_occ_map(self, filename="occ_map.png"):
+        plt.figure(figsize=(10, 8))
+        sns.heatmap(np.rot90(self.environment.return_occ_map()), cmap="PRGn", cbar=False)
+        plt.title("Occupied Map")
+        plt.savefig(self.visualization_dir + filename)
+        plt.close()
+
+    def draw_map(self,):
+        fig, ax = plt.subplots(figsize=(10, 10))
+        ax.set_xlim(-0.5, self.environment.get_size()[1] - 0.5)
+        ax.set_ylim(-0.5, self.environment.get_size()[0] - 0.5)
+        ax.set_xticks(np.arange(-0.5, self.environment.get_size()[1], 1), minor=True)
+        ax.set_yticks(np.arange(-0.5, self.environment.get_size()[0], 1), minor=True)
+        ax.grid(which='minor', color='gray', linestyle='-', linewidth=0)
+        # Plot obstacles
+        for obstacle in self.environment.get_obstacles():
+            x, y = zip(*obstacle)
+            ax.fill(x, y, color='blue', alpha=0.5)
+        # Plot survivors
+        survivors_found = [s for s in self.environment.get_survivors() if s.is_found()]
+        survivors_not_found = [s for s in self.environment.get_survivors() if not s.is_found()]
+        if survivors_not_found:
+            x_nf, y_nf = zip(*[s.get_position() for s in survivors_not_found])
+            ax.scatter(x_nf, y_nf, marker='*', color='red', s=100, label='Survivor Not Found')
+        if survivors_found:
+            x_f, y_f = zip(*[s.get_position() for s in survivors_found])
+            ax.scatter(x_f, y_f, marker='*', color='green', s=100, label='Survivor Found')
+        # Plot robots
+        x_r = [bot.get_position()[0] for bot in self.swarm.actors]
+        y_r = [bot.get_position()[1] for bot in self.swarm.actors]
+        ax.scatter(x_r, y_r, marker='o', color='black', s=20, label='Robots')
+        return fig, ax
+
+    def save_paths(self, filename="path.png"):
+        fig, ax = self.draw_map()
+        for bot in self.swarm.actors:
+            path = bot.get_path()
+            if len(path) > 1:
+                x_pos, y_pos = zip(*path)
+                ax.plot(x_pos, y_pos, linewidth=1)
+        fig.suptitle("Swarm Paths")
+        plt.legend(loc='upper right')
+        plt.savefig(self.visualization_dir + filename)
+        plt.close()
+
+    def animate_swarm(self, interval=200, filename='animation.gif'):
+        """
+        Animates the plotting of the swarm.
+        """
+        fig, ax = self.draw_map()
+        lines = []
+        # Create lines for each robot
+        for bot in self.swarm.actors:
+            line, = ax.plot([], [], lw=2)
+            lines.append(line)
+
+        # Animation function
+        def init():
+            for line in lines:
+                line.set_data([], [])
+            return lines
+
+        def animate_func(i):
+            for line, bot in zip(lines, self.swarm.actors):
+                path = bot.get_path()
+                if i < len(path):
+                    x_pos, y_pos = zip(*path[:i + 1])
+                    line.set_data(x_pos, y_pos)
+            return lines
+
+        # Determine the number of frames
+        max_steps = max(len(bot.get_path()) for bot in self.swarm.actors)
+
+        anim = animation.FuncAnimation(
+            fig, animate_func, init_func=init,
+            frames=max_steps, interval=interval, blit=True
+        )
+
+        # Save the animation
+        anim.save(self.visualization_dir+  filename, writer='ffmpeg')
+        plt.close(fig)
 
 
 start_time = time.time()
@@ -245,15 +393,22 @@ start_time = time.time()
 ### Main Code
 rand_env = Environment((width, height))
 rand_env.random_obstacles(num_obstacles, max_vertices, max_size)
+rand_env.add_survivors(5, (width/5, height/2), 15)
+rand_env.add_survivors(10, (width/2, height/5), 20)
 
 test_swarm = Swarm(num_actors, rand_env, init = 'random')
-test_swarm.random_walk(100)
+test_swarm.random_walk(200)
 
 end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time: {execution_time} seconds")
 
 #Visualizations
-test_swarm.plot()
-rand_env.save_occ_map()
-test_swarm.animate() # this causes a lot of slowdowns
+visualization = Visualizer(rand_env, test_swarm)
+visualization.save_occ_map()  # Generates occ_map.png
+visualization.save_paths() # Generates path.png
+visualization.animate_swarm() # Generates animation.gif # this causes a lot of slowdowns
+
+# test_swarm.plot() # Generates path.png
+# rand_env.save_occ_map() # Generates occ_map.png
+# test_swarm.animate() # Generates animation.gif # this causes a lot of slowdowns
