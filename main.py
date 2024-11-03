@@ -45,6 +45,8 @@ class Robot:
     def __init__(self, start_pos):
         self.pos = start_pos
         self.path = [start_pos]
+        self.recharging_procedure_time = 0
+        self.mission_time = 0
 
     def move(self, new_pos):
         self.pos = new_pos
@@ -257,6 +259,7 @@ class Swarm:
           if self.is_valid_move(new_pos):
             bot.move(new_pos)
             self.environment.update_occ_map(new_pos, search_range)
+          bot.mission_time += 1
         self.detect_survivors(range = search_range)
 
 
@@ -438,7 +441,3 @@ visualization = Visualizer(rand_env, test_swarm)
 visualization.save_occ_map()  # Generates occ_map.png
 visualization.save_paths() # Generates path.png
 # visualization.animate_swarm() # Generates animation.gif # this causes a lot of slowdowns
-
-# test_swarm.plot() # Generates path.png
-# rand_env.save_occ_map() # Generates occ_map.png
-# test_swarm.animate() # Generates animation.gif # this causes a lot of slowdowns
