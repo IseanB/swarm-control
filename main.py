@@ -28,6 +28,7 @@ class Survivor:
     def __init__(self, position):
         self.position = position
         self.status = "not found"
+        self.time_in_env = 0
 
     def get_position(self):
         return self.position
@@ -37,6 +38,10 @@ class Survivor:
 
     def mark_as_found(self):
         self.status = "found"
+
+    def increment_time(self):
+        if(self.status != "found"):
+          time_in_env += 1
 
 class Robot:
     """
@@ -261,7 +266,8 @@ class Swarm:
             self.environment.update_occ_map(new_pos, search_range)
           bot.mission_time += 1
         self.detect_survivors(range = search_range)
-
+        for survivor in self.environment.get_survivors():
+          survivor.increment_time()
 
     def draw_map(self):
       fig, ax = plt.subplots()
