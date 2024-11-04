@@ -28,6 +28,7 @@ class Survivor:
     def __init__(self, position):
         self.position = position
         self.status = "not found"
+        self.time_in_env = 0
 
     def get_position(self):
         return self.position
@@ -38,6 +39,10 @@ class Survivor:
     def mark_as_found(self):
         self.status = "found"
 
+    def increment_time(self):
+        if(self.status != "found"):
+          self.time_in_env += 1
+
 class Robot:
     """
     Basic robot class that can move and keeps track of past postions
@@ -45,6 +50,8 @@ class Robot:
     def __init__(self, start_pos):
         self.pos = start_pos
         self.path = [start_pos]
+        self.recharging_procedure_time = 0
+        self.mission_time = 0
 
     def move(self, new_pos):
         self.pos = new_pos
@@ -257,8 +264,10 @@ class Swarm:
           if self.is_valid_move(new_pos):
             bot.move(new_pos)
             self.environment.update_occ_map(new_pos, search_range)
+          bot.mission_time += 1
         self.detect_survivors(range = search_range)
-
+        for survivor in self.environment.get_survivors():
+          survivor.increment_time()
 
     def draw_map(self):
       fig, ax = plt.subplots()
@@ -418,6 +427,48 @@ class Visualizer:
         plt.close(fig)
 
 
+class Evaluator:
+    """
+    Evaluates the performance of the simulation by calculating various metrics.
+    """
+    def __init__(self, swarm, environment):
+        self.swarm = swarm
+        self.environment = environment
+
+    def evaluate(self):
+        # Sum of all `time_in_env` for each survivor
+        total_time_in_env = sum(survivor.time_in_env for survivor in self.environment.get_survivors())
+
+        # Percentage of the occupancy map that has been searched (any cell with a value > 0)
+        occ_map = self.environment.return_occ_map()
+        searched_cells = np.count_nonzero(occ_map)
+        total_cells = occ_map.size
+        percentage_searched = (searched_cells / total_cells) * 100
+
+        # Percentage of survivors found vs not found
+        total_survivors = len(self.environment.get_survivors())
+        survivors_found = sum(1 for survivor in self.environment.get_survivors() if survivor.is_found())
+        percentage_found = (survivors_found / total_survivors) * 100
+        percentage_not_found = 100 - percentage_found
+
+        # Total mission time and time spent in recharging procedure for each robot
+        total_mission_time = sum(robot.mission_time for robot in self.swarm.actors)
+        total_recharging_time = sum(robot.recharging_procedure_time for robot in self.swarm.actors)
+        percentage_recharging = (total_recharging_time / total_mission_time) * 100 if total_mission_time else 0
+
+        # Display results
+        print("---------------------")
+        print("Evaluation Metrics:")
+        print("---------------------")
+        print(f"Total Time in Environment for All Survivors: {total_time_in_env}")
+        print(f"Occupancy Map Percentage Searched: {percentage_searched:.2f}%")
+        print(f"Percentage of Survivors Found: {percentage_found:.2f}%")
+        print(f"Percentage of Survivors Not Found: {percentage_not_found:.2f}%")
+        print(f"Time Spent in Recharging Procedure: {total_recharging_time}")
+        print(f"Total Mission Time: {total_mission_time}")
+        print(f"Percentage Time in Recharging Procedure: {percentage_recharging:.2f}%")
+
+
 start_time = time.time()
 
 ### Main Code
@@ -433,12 +484,12 @@ end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time: {execution_time} seconds")
 
+# Evaluation
+evaluator = Evaluator(test_swarm, rand_env)
+evaluator.evaluate()
+
 #Visualizations
 visualization = Visualizer(rand_env, test_swarm)
 visualization.save_occ_map()  # Generates occ_map.png
 visualization.save_paths() # Generates path.png
 # visualization.animate_swarm() # Generates animation.gif # this causes a lot of slowdowns
-
-# test_swarm.plot() # Generates path.png
-# rand_env.save_occ_map() # Generates occ_map.png
-# test_swarm.animate() # Generates animation.gif # this causes a lot of slowdowns
