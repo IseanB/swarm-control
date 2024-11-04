@@ -41,7 +41,7 @@ class Survivor:
 
     def increment_time(self):
         if(self.status != "found"):
-          time_in_env += 1
+          self.time_in_env += 1
 
 class Robot:
     """
