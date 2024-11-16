@@ -12,7 +12,7 @@ class WPT:
         self.rotation = rotation
         self.translation = translation
         self.alpha = 0
-        self.pos = self.scene_transformation()
+        self.pos = self.__scene_transformation()
 
     def get_pos(self):
         return pos
@@ -20,7 +20,7 @@ class WPT:
     def get_x(self):
         return self.x_min*(1-self.alpha) + self.x_max*(self.alpha)
     
-    def update_alpha(self, new_alpha):
+    def __update_alpha(self, new_alpha):
         if(new_alpha<0):
             self.alpha = 0
         elif(new_alpha>1):
@@ -28,7 +28,7 @@ class WPT:
         else:
             self.alpha = new_alpha
     
-    def scene_transformation(self):
+    def __scene_transformation(self):
         x = self.get_x()
         y = math.sin(x)
         pos = np.array([x, y, 0])
@@ -44,10 +44,10 @@ class WPT:
         transformed_pos = rot_mat @ pos + self.translation
         return transformed_pos[:2]
 
-    # def move(self, distance=.05):
-        # self.pos += distance
-        # self.scene_transformation()
-        # return pos
+    def move(self, distance=.05):
+        self.__update_alpha(self.alpha + distance)
+        pos = self.__scene_transformation()
+        return pos
 
 def plot_WPT_scene_transformations():
     # Define parameters
@@ -60,11 +60,10 @@ def plot_WPT_scene_transformations():
     wpt = WPT(x_range, translation, rotation)
 
     # Generate points for varying alpha
-    alphas = np.linspace(0, 1, 100)
+    alphas = np.linspace(0, 1, 1000)
     transformed_positions = []
     for alpha in alphas:
-        wpt.update_alpha(alpha)
-        transformed_positions.append(wpt.scene_transformation())
+        transformed_positions.append(wpt.move(alpha))
 
     # Extract x and y coordinates
     x_vals = [pos[0] for pos in transformed_positions]
