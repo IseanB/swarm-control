@@ -162,17 +162,6 @@ class Swarm:
       fig.suptitle("Swarm Paths")
       fig.savefig(visualization_dir + "path.png")
 
-    def move_with_potential_field(self, potential_field, steps=100, search_range=1):
-        for _ in range(steps):
-            potential_field.compute_next_positions()
-            self.detect_survivors(range=search_range)
-            for bot in self.actors:
-                self.environment.update_occ_map(bot.get_position(), search_range)
-                bot.mission_time += 1
-            for survivor in self.environment.get_survivors():
-                survivor.increment_time()
-
-
     def animate(self, interval=200, filename='animation.gif'):
       """
       Animates the plotting of the swarm.
