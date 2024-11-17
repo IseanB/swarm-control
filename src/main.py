@@ -7,9 +7,10 @@ from matplotlib import rc
 rc('animation', html='jshtml')
 from scipy.spatial import ConvexHull
 import time
+
 from rand_env import *
 from visualizer import *
-from swarm import *
+from simulator import *
 from apf import *
 from wpt import *
 from evaluate import *
@@ -26,41 +27,40 @@ robot_search_radius = 1 # defined a circle around each robot that is considered 
 visualization_dir = "./visual_results/"
 np.random.seed(1)
 
-### Random Walk
-np.random.seed(1)
+### ---------- Random Walk ----------
+np.random.seed(10)
 rand_env = Environment((width, height))
 rand_env.random_obstacles(num_obstacles, max_vertices, max_size)
 rand_env.add_survivors(5, (width/5, height/2), 15)
 rand_env.add_survivors(10, (width/2, height/5), 20)
 
-test_swarm = Swarm(num_actors, rand_env, init = 'random')
+simulator_1 = Simulator(num_actors, rand_env, init = 'random')
 
 start_time = time.time()
-
-test_swarm.random_walk(200,robot_search_radius)
-
+simulator_1.random_walk(200,robot_search_radius)
 end_time = time.time()
+
 execution_time = end_time - start_time
 print(f"Execution time: {execution_time} seconds")
 
 # Evaluation
-evaluator = Evaluator(test_swarm, rand_env)
+evaluator = Evaluator(simulator_1, rand_env)
 evaluator.evaluate()
 
 #Visualizations
-visualization = Visualizer(rand_env, test_swarm)
+visualization = Visualizer(rand_env, simulator_1)
 visualization.save_occ_map(filename='occ_map_random_walk.png')  # Generates occ_map.png
 visualization.save_paths(filename='path_random_walk.png') # Generates path.png
 visualization.animate_swarm(filename='animation_random_walk.gif') # Generates animation.gif # this causes a lot of slowdowns
 
-# APF
-np.random.seed(1)
+# ---------- APF Run ----------
+np.random.seed(10)
 rand_env = Environment((width, height))
 rand_env.random_obstacles(num_obstacles, max_vertices, max_size)
 rand_env.add_survivors(5, (width/5, height/2), 15)
 rand_env.add_survivors(10, (width/2, height/5), 20)
 
-test_swarm = Swarm(num_actors, rand_env, init='random')
+simulator_2 = Simulator(num_actors, rand_env, init='random')
 
 # Define parameters for the potential field
 params = {
@@ -72,24 +72,26 @@ params = {
 }
 
 # Create the potential field planner
+potential_field = AdaptivePotentialField(rand_env, simulator_2, params)
+
 start_time = time.time()
 
-potential_field = AdaptivePotentialField(rand_env, test_swarm, params)
-
-# Move the swarm using the potential field
-test_swarm.move_with_potential_field(potential_field, steps=200, search_range=robot_search_radius)
+dt = 1
+for i in range(200):
+    # Move the swarm using the potential field
+    simulator_2.move_with_potential_field(potential_field, steps=dt, search_range=robot_search_radius)
 
 end_time = time.time()
 execution_time = end_time - start_time
 print(f"Execution time: {execution_time} seconds")
 
 # Evaluation
-evaluator = Evaluator(test_swarm, rand_env)
+evaluator = Evaluator(simulator_2, rand_env)
 evaluator.evaluate()
 
 # Visualizations
 # gradient_plot(potential_field, [0,width], [0,height])
-visualization = Visualizer(rand_env, test_swarm)
+visualization = Visualizer(rand_env, simulator_2)
 visualization.save_occ_map(filename='occ_map_apf.png')  # Generates occ_map.png
 visualization.save_paths(filename='paths_apf.png')    # Generates path.png
 # visualization.plot_potential_field(potential_field, skip=5, filename="potential_field.png")

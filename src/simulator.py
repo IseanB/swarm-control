@@ -40,9 +40,9 @@ class Robot:
     def get_path(self):
       return self.path
 
-class Swarm:
+class Simulator:
     """
-    Swarm class that holds the robots and environment
+    Swarm class that holds the robots, WPT, and environment
     contains methods to globally move the swarm around
     """
     def __init__(self, num_actors, environment, init):
