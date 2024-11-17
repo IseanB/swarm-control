@@ -136,18 +136,6 @@ class Environment:
     def return_occ_map(self):
       return (self.occupancy_map)
     
-    def display_occ_map(self):
-      plt.figure(figsize=(10, 8))
-      sns.heatmap(np.rot90(self.occupancy_map), cmap="PRGn", cbar=False)
-      plt.suptitle("Occupied Map")
-      plt.show()
-    
-    def save_occ_map(self):
-      plt.figure(figsize=(10, 8))
-      sns.heatmap(np.rot90(self.occupancy_map), cmap="PRGn", cbar=False)
-      plt.title("Occupied Map")
-      plt.savefig(visualization_dir + "occ_map.png")
-
     def obstacle_collision(self, position):
       """
       Determines whether a point is inside an obstacle.
