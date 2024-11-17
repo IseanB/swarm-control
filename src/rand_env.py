@@ -43,26 +43,6 @@ class Survivor:
         if(self.status != "found"):
           self.time_in_env += 1
 
-class Robot:
-    """
-    Basic robot class that can move and keeps track of past postions
-    """
-    def __init__(self, start_pos):
-        self.pos = start_pos
-        self.path = [start_pos]
-        self.recharging_procedure_time = 0
-        self.mission_time = 0
-
-    def move(self, new_pos):
-        self.pos = new_pos
-        self.path.append(self.pos)
-
-    def get_position(self):
-        return self.pos
-
-    def get_path(self):
-      return self.path
-
 class Environment:
     """
     Holds the description of the environment such as size and obstacles
