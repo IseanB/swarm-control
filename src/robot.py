@@ -27,8 +27,6 @@ class Robot:
 
     def move(self, new_pos):
         distance = np.linalg.norm(np.array(self.pos) - np.array(new_pos))
-        if self.id == 0:
-            print("moving to: ", new_pos, "from: ", self.pos)
         if self.battery > 0:
             if self.battery - (battery_burn * distance) > 0:
                 self.pos = new_pos

@@ -306,7 +306,6 @@ def run_swarm_tree_test():
         potential_field, steps=200, search_range=robot_search_radius
     )
     test_swarm.print_tree()
-    print(test_swarm.actors[0].get_path())
 
     end_time = time.time()
     execution_time = end_time - start_time
