@@ -12,12 +12,13 @@ from visualizer import *
 from swarm import *
 from apf import *
 
+
 # Global param.
 
-width = 1000
-height = 1000
-num_actors = 4
-num_obstacles = 15
+width = 15
+height = 15
+num_actors = 1
+num_obstacles = 0
 max_vertices = 4
 max_size = 100
 robot_search_radius = 1 # defined a circle around each robot that is considered "explored"
@@ -113,7 +114,8 @@ def run_swarm():
 
     start_time = time.time()
 
-    test_swarm.random_walk(200, robot_search_radius)
+    test_swarm.random_walk(15, robot_search_radius)
+    test_swarm.print_tree()
 
     end_time = time.time()
     execution_time = end_time - start_time
@@ -145,6 +147,7 @@ def run_swarm():
     # Define parameters for the potential field
     params = {
         "k_att": 100.0,  # Attractive potential gain
+        "k_bat": 1.0,  # Attractive Battery Gain
         "k_rep": 1.0,  # Repulsive potential gain
         "Q_star": 10.0,  # Obstacle influence distance
         "step_size": 1.0,  # Step size for robot movement
@@ -175,7 +178,7 @@ def run_swarm():
     visualization.save_occ_map(filename="occ_map_apf.png")  # Generates occ_map.png
     visualization.save_paths(filename="paths_apf.png")  # Generates path.png
     # visualization.plot_potential_field(potential_field, skip=5, filename="potential_field.png")
-    visualization.animate_swarm(filename="animation_apf.gif")
+    # visualization.animate_swarm(filename="animation_apf.gif")
 
 
 def run_swarm_wpt():
@@ -210,30 +213,31 @@ def run_swarm_wpt():
     env.add_survivors(5, (500, 500), 15)
     env.add_survivors(5, (300, 800), 15)
 
-    # test_swarm_rand = Swarm(num_actors, env, init="wpt")
-    #
-    # start_time = time.time()
-    #
-    # test_swarm_rand.random_walk(1000, robot_search_radius)
-    #
-    # end_time = time.time()
-    # execution_time = end_time - start_time
-    # print(f"Execution time: {execution_time} seconds")
-    #
-    ## Evaluation
-    # evaluator = Evaluator(test_swarm_rand, env)
+    test_swarm_rand = Swarm(num_actors, env, init="wpt")
+
+    start_time = time.time()
+
+    test_swarm_rand.random_walk(1000, robot_search_radius)
+
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"Execution time: {execution_time} seconds")
+
+    # Evaluation
+    evaluator = Evaluator(test_swarm_rand, env)
     # evaluator.evaluate()
-    #
-    ## Visualizations
-    # visualization = Visualizer(env, test_swarm_rand)
-    # visualization.save_occ_map(
-    #    filename="wpt/occ_map_random_walk.png"
-    # )  # Generates occ_map.png
-    # visualization.save_paths(filename="wpt/path_random_walk.png")  # Generates path.png
-    ## visualization.animate_swarm(filename='swarm_wpt/animation_random_walk.gif') # Generates animation.gif # this causes a lot of slowdowns
-    #
+
+    # Visualizations
+    visualization = Visualizer(env, test_swarm_rand)
+    visualization.save_occ_map(
+        filename="wpt/occ_map_random_walk.png"
+    )  # Generates occ_map.png
+    visualization.save_paths(filename="wpt/path_random_walk.png")  # Generates path.png
+    # visualization.animate_swarm(filename='swarm_wpt/animation_random_walk.gif') # Generates animation.gif # this causes a lot of slowdowns
+    test_swarm_rand.print_tree()
+
     test_swarm_apf = Swarm(num_actors, env, init="wpt")
-    print(test_swarm_apf.actors)
+    # print(test_swarm_apf.actors)
 
     params = {
         "k_att": 100.0,  # Attractive potential gain
@@ -254,13 +258,16 @@ def run_swarm_wpt():
         potential_field, steps=1000, search_range=robot_search_radius
     )
 
+    # print movement tree
+    # test_swarm_apf.print_tree()
+
     end_time = time.time()
     execution_time = end_time - start_time
     print(f"Execution time: {execution_time} seconds")
 
     # Evaluation
     evaluator = Evaluator(test_swarm_apf, env)
-    evaluator.evaluate()
+    # evaluator.evaluate()
 
     # Visualizations
     # gradient_plot(potential_field, [0,width], [0,height])
@@ -271,4 +278,59 @@ def run_swarm_wpt():
     # visualization.animate_swarm(filename="wpt/animation_apf.gif")
 
 
-run_swarm_wpt()
+def run_swarm_tree_test():
+    np.random.seed(1)
+    rand_env = Environment((width, height))
+    rand_env.random_obstacles(num_obstacles, max_vertices, max_size)
+    rand_env.add_survivors(5, (width / 5, height / 2), 15)
+    rand_env.add_survivors(10, (width / 2, height / 5), 20)
+
+    test_swarm = Swarm(num_actors, rand_env, init="random")
+
+    start_time = time.time()
+    params = {
+        "k_att": 100.0,  # Attractive potential gain
+        "k_bat": 5,  # Attractive potential for charging
+        "k_rep": 1.0,  # Repulsive potential gain
+        "Q_star": 10.0,  # Obstacle influence distance
+        "step_size": 1.0,  # Step size for robot movement
+        "delta": 1e-2,  # Small value for numerical gradient
+    }
+
+    # Create the potential field planner
+    start_time = time.time()
+
+    potential_field = AdaptivePotentialField(rand_env, test_swarm, params)
+
+    test_swarm.move_with_potential_field(
+        potential_field, steps=200, search_range=robot_search_radius
+    )
+    test_swarm.print_tree()
+    print(test_swarm.actors[0].get_path())
+
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"Execution time: {execution_time} seconds")
+
+    visualization = Visualizer(rand_env, test_swarm)
+    visualization.save_paths(filename="path_random_walk_test.png")  # Generates path.png
+    visualization.animate_swarm(
+        filename="animation_random_walk_test.gif"
+    )  # Generates animation.gif # this causes a lot of slowdowns
+
+
+run_swarm_tree_test()
+
+
+"""
+ToDo:
+How will this affect compute?
+Make the tree done
+each tree will be kept track of at the robot level, done
+on a valid move the swarm will check if that position has been visited by any other robots done
+if it is then get that node from that robot and add that node to the robots tree done
+set the current node to that with its distance and parents done
+then need to add backtrace 
+this will get taken care of when telling the bot to move to position of parent
+current 
+"""

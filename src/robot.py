@@ -1,11 +1,15 @@
+import numpy as np
+import networkx as nx
+import matplotlib.pyplot as plt
+
 max_charge = 100  # total battery amount
-distance_per_charge = 500  # distance that bot can move
+
+
+distance_per_charge = 150  # distance that bot can move
 battery_burn = (
     max_charge / distance_per_charge
 )  # the amount of battery cost a movement has
-import numpy as np
-
-
+# remaining distance = m
 class Robot:
     """
     Basic robot class that can move and keeps track of past postions
@@ -19,9 +23,12 @@ class Robot:
         self.mission_time = 0
         self.max_charge = max_charge
         self.battery = 100
+        self.current_node = Path_Node(None, start_pos, 0)
 
     def move(self, new_pos):
         distance = np.linalg.norm(np.array(self.pos) - np.array(new_pos))
+        if self.id == 0:
+            print("moving to: ", new_pos, "from: ", self.pos)
         if self.battery > 0:
             if self.battery - (battery_burn * distance) > 0:
                 self.pos = new_pos
@@ -32,6 +39,16 @@ class Robot:
                 self.pos = new_pos
             return True
         return False
+
+    def update_node(self, parent, pos):
+        distance_moved = np.linalg.norm(np.array(parent.get_pos()) - np.array(pos))
+        total_distance = distance_moved + parent.get_distance()
+        new_node = Path_Node(parent, pos, total_distance)
+        parent.add_child(new_node)
+        self.current_node = new_node
+
+    def set_node(self, node):
+        self.current_node = node
 
     def get_position(self):
         return self.pos
@@ -45,8 +62,14 @@ class Robot:
     def get_remaining_ratio(self):
         return self.battery / self.max_charge
 
+    def get_remaining_distance(self):
+        return self.battery / battery_burn
+
     def get_near_known_charge(self):
         return self.path[0]
+
+    def get_current_node(self):
+        return self.current_node
 
 
 class Path_Node:
@@ -54,7 +77,7 @@ class Path_Node:
         self.parent = parent
         self.pos = pos
         self.distance = distance
-        self.children = None
+        self.children = []
 
     def add_child(self, child):
         self.children.append(child)
@@ -70,3 +93,71 @@ class Path_Node:
 
     def get_children(self):
         return self.children
+
+    def find_root(self):
+        # print(self.parent)
+        # print(self)
+        if self.get_parent() == None:
+            # print("no parent")
+            # print("returning ", self)
+            return self
+        else:
+            # print("has parent")
+            # print(self.parent)
+            return self.parent.find_root()
+
+    def depth_first_exists(self, pos):
+        if self.pos == pos:
+            # print("found, returning: ", self)
+            return self  # Found the node
+
+        for child in self.children:
+            where_exists = child.depth_first_exists(pos)
+            if where_exists:
+                # print("found in child: ", where_exists)
+                return (
+                    where_exists  # Found the node in a child subtree return that node
+                )
+        return None  # Not found in this subtree
+
+    def pos_visited(self, pos):
+        root = self.find_root()
+        # print("Root found", root)
+        return root.depth_first_exists(pos)
+
+    def visualize_tree(root):
+        G = nx.DiGraph()
+
+        def add_node_and_edges(node, parent=None):
+            G.add_node(node.pos)
+            if parent:
+                G.add_edge(parent.pos, node.pos)
+            for child in node.children:
+                add_node_and_edges(child, node)
+
+        add_node_and_edges(root)
+
+        pos = nx.spring_layout(G)  # You can experiment with different layouts
+        nx.draw(
+            G,
+            pos,
+            with_labels=True,
+            node_size=20,
+            node_color="skyblue",
+            font_size=5,
+            font_weight="bold",
+            arrowsize=5,
+        )
+        plt.savefig("./visual_results/wpt/tree")
+
+    def print_trees(self, level=0):
+        """Prints the tree structure in a hierarchical format.
+
+        Args:
+            level (int, optional): Indentation level for the current node. Defaults to 0.
+        """
+
+        indent = "  " * level
+        print(indent + "(" + str(self.pos[0]) + ", " + str(self.pos[1]) + ")")
+        for child in self.children:
+            child.print_trees(level + 1)

@@ -11,6 +11,7 @@
   -  ```pip install matplotlib```
   -  ```pip install seaborn```
   -  ```pip install scipy```
+  -  ```pip install networkx```
 5. Run python script
   - ```python3 main.py```
 

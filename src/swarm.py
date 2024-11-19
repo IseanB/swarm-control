@@ -9,6 +9,7 @@ from scipy.spatial import ConvexHull
 import time
 from robot import Robot
 
+
 # Global param.
 
 width = 100
@@ -71,9 +72,27 @@ class Swarm:
             id += 1
 
     def move(self, id, new_pos):
+        node = self.node_visited(new_pos)
+        # print("Node: ", node)
         moved = self.actors[id].move(new_pos)
-        # if moved:
-        #    #if new_pos visited
+        if moved:
+            if (
+                node == None
+            ):  # if not visited make a node with parent as the current node
+                # print("correct")
+                self.actors[id].update_node(self.actors[id].get_current_node(), new_pos)
+            else:  # if it has been visited set the node to the visited node
+                # print("incorrect")
+                self.actors[id].set_node(node)
+
+    def node_visited(self, pos):
+        for robot in self.actors.values():
+            node_visited = robot.get_current_node().pos_visited(pos)
+            # print(robot.get_current_node())
+            # print(node_visited)
+            if node_visited:
+                return node_visited
+        return None
 
     def is_valid_move(self, position):
         size = self.environment.get_size()
@@ -135,7 +154,7 @@ class Swarm:
                 # print(new_pos)
                 # print("\n")
                 if self.is_valid_move(new_pos):
-                    bot.move(new_pos)
+                    self.move(bot.get_id(), new_pos)
                     self.environment.update_occ_map(new_pos, search_range)
                 bot.mission_time += 1
             self.detect_survivors(range=search_range)
@@ -226,3 +245,7 @@ class Swarm:
         anim.save(visualization_dir + filename, writer="ffmpeg")
         anim
         plt.close(fig)
+
+    def print_tree(self):
+        root = self.actors[0].get_current_node().find_root()
+        root.visualize_tree()

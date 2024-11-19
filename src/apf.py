@@ -149,28 +149,34 @@ class AdaptivePotentialField:
         self.step += 1
         for robot in self.swarm.actors.values():
             current_pos = np.array(robot.get_position(), dtype=float)
-            # if battery condition
-            # nextpos = retrace
-            # else:
-            grad = self.compute_gradient(robot)
-            if np.linalg.norm(grad) == 0:
-                continue  # Skip if gradient is zero
-            # Move in the negative gradient direction
-            step_size = self.params['step_size']
-            direction = -grad / np.linalg.norm(grad)
-            new_pos = current_pos + step_size * direction
-            new_pos = np.round(new_pos).astype(int)  # Assuming grid positions
-            # Ensure new_pos is valid
-            size = self.environment.get_size()
             if (
-                0 <= new_pos[0] < size[0]
-                and 0 <= new_pos[1] < size[1]
-                and not self.environment.obstacle_collision(new_pos)
-                and self.swarm.is_valid_move(tuple(new_pos))
-            ):
-                # Move robot
-                self.swarm.move(robot.get_id(), tuple(new_pos))
-            # self.visualizer.save_frames(filename=f'paths_apf_{self.step}.png')
+                robot.get_current_node().get_distance()
+                >= robot.get_remaining_distance()
+            ):  # turning threshold
+                if robot.get_current_node().get_parent():  # check if at root
+                    self.swarm.move(
+                        robot.get_id(), robot.get_current_node().get_parent().get_pos()
+                    )  # move the current robot to its parent nodes position
+            else:
+                grad = self.compute_gradient(robot)
+                if np.linalg.norm(grad) == 0:
+                    continue  # Skip if gradient is zero
+                # Move in the negative gradient direction
+                step_size = self.params["step_size"]
+                direction = -grad / np.linalg.norm(grad)
+                new_pos = current_pos + step_size * direction
+                new_pos = np.round(new_pos).astype(int)  # Assuming grid positions
+                # Ensure new_pos is valid
+                size = self.environment.get_size()
+                if (
+                    0 <= new_pos[0] < size[0]
+                    and 0 <= new_pos[1] < size[1]
+                    and not self.environment.obstacle_collision(new_pos)
+                    and self.swarm.is_valid_move(tuple(new_pos))
+                ):
+                    # Move robot
+                    self.swarm.move(robot.get_id(), tuple(new_pos))
+                # self.visualizer.save_frames(filename=f'paths_apf_{self.step}.png')
 
 
 def gradient_plot(potential_field, xlim, ylim, skip=10):
