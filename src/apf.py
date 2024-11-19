@@ -8,16 +8,17 @@ rc('animation', html='jshtml')
 from scipy.spatial import ConvexHull
 from visualizer import *
 
+
 # Global parameters
-width = 200
-height = 200
-num_actors = 20
-num_obstacles = 15
-max_vertices = 10
-max_size = 10
-robot_search_radius = 1  # Defined as a circle around each robot that is considered "explored"
-visualization_dir = "./visual_results/"
-np.random.seed(1)
+# width = 200
+# height = 200
+# num_actors = 20
+# num_obstacles = 15
+# max_vertices = 10
+# max_size = 10
+# robot_search_radius = 1  # Defined as a circle around each robot that is considered "explored"
+# visualization_dir = "./visual_results/"
+# np.random.seed(1)
 
 class AdaptivePotentialField:
     """
@@ -109,8 +110,9 @@ class AdaptivePotentialField:
         U = U_att + U_rep
         return U
 
-    def compute_gradient(self, position):
+    def compute_gradient(self, robot):
         # Numerically approximate the gradient
+        position = np.array(robot.get_position(), dtype=float)
         delta = self.params['delta']  # Small value for numerical gradient
 
         # Compute the attractive potential and nearest survivor
@@ -119,7 +121,11 @@ class AdaptivePotentialField:
             return np.zeros(2)  # No gradient if no survivors left
 
         # Compute gradient analytically for the attractive potential
-        grad_att = self.params['k_att'] * (np.array(position) - np.array(nearest_survivor))
+        grad_att = self.params["k_att"] * (
+            np.array(position) - np.array(nearest_survivor)
+        ) + self.params["k_bat"] * (robot.get_remaining_ratio()) * (
+            np.array(position) - np.array(robot.get_near_known_charge())
+        )
 
         # Compute repulsive gradient numerically
         grad_rep = np.zeros(2)
@@ -141,9 +147,12 @@ class AdaptivePotentialField:
 
     def compute_next_positions(self):
         self.step += 1
-        for robot in self.swarm.actors:
+        for robot in self.swarm.actors.values():
             current_pos = np.array(robot.get_position(), dtype=float)
-            grad = self.compute_gradient(current_pos)
+            # if battery condition
+            # nextpos = retrace
+            # else:
+            grad = self.compute_gradient(robot)
             if np.linalg.norm(grad) == 0:
                 continue  # Skip if gradient is zero
             # Move in the negative gradient direction
@@ -160,9 +169,8 @@ class AdaptivePotentialField:
                 and self.swarm.is_valid_move(tuple(new_pos))
             ):
                 # Move robot
-                robot.move(tuple(new_pos))
-            # self.visualizer.save_frames(filename=f'paths_apf_{self.step}.png') 
-
+                self.swarm.move(robot.get_id(), tuple(new_pos))
+            # self.visualizer.save_frames(filename=f'paths_apf_{self.step}.png')
 
 
 def gradient_plot(potential_field, xlim, ylim, skip=10):
