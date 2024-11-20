@@ -16,7 +16,6 @@ num_actors = 20
 num_obstacles = 15
 max_vertices = 4
 max_size = 100
-robot_search_radius = 1 # defined a circle around each robot that is considered "explored"
 visualization_dir = "./visual_results/"
 np.random.seed(1)
 
