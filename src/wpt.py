@@ -15,7 +15,7 @@ class WPT:
         self.pos = self.scene_transformation()
 
     def get_pos(self):
-        return pos
+        return self.pos
 
     def get_x(self):
         return self.x_min*(1-self.alpha) + self.x_max*(self.alpha)
@@ -45,16 +45,23 @@ class WPT:
         return transformed_pos[:2]
 
     def move(self, distance=.05):
-        self.__update_alpha(self.alpha + distance)
-        pos = self.__scene_transformation()
-        return pos
+        self.update_alpha(self.alpha + distance)
+        self.pos = self.scene_transformation()
+        return self.pos
 
 class WPTS:
     def __init__(self):
         self.wpts = []
 
+    def get_wpts(self):
+        return self.wpts
+
     def add_wpt(self, x_val, translation, rotation):
-       self.wpts.append(WPT(x_val, translation, rotation))
+       self.wpts.append(WPT(x_val, translation, rotation)) # represents state and ???
+
+    def move_wpts(self, distance=0.05):   
+        for wpt in self.wpts:
+            wpt.move(distance)
 
     def scheduling(self, occupany_map, robots, omega):
         '''
@@ -78,7 +85,7 @@ class WPTS:
                 dr_centroid_pos.append(robot[0])
 
         fr_nodes = []
-        
+
 
         # print("Post filiter", dr_centroid_pos)
 
