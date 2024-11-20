@@ -7,6 +7,7 @@ from matplotlib import rc
 rc('animation', html='jshtml')
 from scipy.spatial import ConvexHull
 import time
+from robot import *
 
 # Global param.
 
@@ -16,40 +17,20 @@ num_actors = 20
 num_obstacles = 15
 max_vertices = 4
 max_size = 100
-robot_search_radius = 1 # defined a circle around each robot that is considered "explored"
 visualization_dir = "./visual_results/"
 np.random.seed(1)
-
-class Robot:
-    """
-    Basic robot class that can move and keeps track of past postions
-    """
-    def __init__(self, start_pos):
-        self.pos = start_pos
-        self.path = [start_pos]
-        self.recharging_procedure_time = 0
-        self.mission_time = 0
-
-    def move(self, new_pos):
-        self.pos = new_pos
-        self.path.append(self.pos)
-
-    def get_position(self):
-        return self.pos
-
-    def get_path(self):
-      return self.path
 
 class Simulator:
     """
     Swarm class that holds the robots, WPT, and environment
     contains methods to globally move the swarm around
     """
-    def __init__(self, num_actors, environment, init):
+    def __init__(self, num_actors, environment, all_wpts, init):
       self.environment = environment
       self.num_actors = num_actors
       self.survivors_found = 0
       self.actors = []
+      self.wpts = all_wpts
       next_pos = 0
       if init == 'close':
         self.close_init()
@@ -137,3 +118,7 @@ class Simulator:
                 bot.mission_time += 1
             for survivor in self.environment.get_survivors():
                 survivor.increment_time()
+
+    def schedule_WPT(self):
+      self.wpts.scheduling(self.environment.return_occ_map(), self.actors, 82)
+      return None
