@@ -34,7 +34,10 @@ rand_env.random_obstacles(num_obstacles, max_vertices, max_size)
 rand_env.add_survivors(5, (width/5, height/2), 15)
 rand_env.add_survivors(10, (width/2, height/5), 20)
 
-simulator_1 = Simulator(num_actors, rand_env, init = 'random')
+all_wpts = WPTS()
+# all_wpts.add_wpt((0,10),(2,2,0), math.pi / 4)
+
+simulator_1 = Simulator(num_actors, rand_env, all_wpts, init = 'random')
 
 start_time = time.time()
 simulator_1.random_walk(200,robot_search_radius)
@@ -51,7 +54,7 @@ evaluator.evaluate()
 visualization = Visualizer(rand_env, simulator_1)
 visualization.save_occ_map(filename='occ_map_random_walk.png')  # Generates occ_map.png
 visualization.save_paths(filename='path_random_walk.png') # Generates path.png
-visualization.animate_swarm(filename='animation_random_walk.gif') # Generates animation.gif # this causes a lot of slowdowns
+# visualization.animate_swarm(filename='animation_random_walk.gif') # Generates animation.gif # this causes a lot of slowdowns
 
 # ---------- APF Run ----------
 np.random.seed(10)
@@ -60,7 +63,10 @@ rand_env.random_obstacles(num_obstacles, max_vertices, max_size)
 rand_env.add_survivors(5, (width/5, height/2), 15)
 rand_env.add_survivors(10, (width/2, height/5), 20)
 
-simulator_2 = Simulator(num_actors, rand_env, init='random')
+all_wpts = WPTS()
+all_wpts.add_wpt((0,10),(2,2,0), math.pi / 4)
+# goal call scheduling
+simulator_2 = Simulator(num_actors, rand_env, all_wpts, init='random')
 
 # Define parameters for the potential field
 params = {
@@ -78,8 +84,10 @@ start_time = time.time()
 
 dt = 1
 for i in range(200):
-    # Move the swarm using the potential field
     simulator_2.move_with_potential_field(potential_field, steps=dt, search_range=robot_search_radius)
+    
+simulator_2.schedule_WPT()
+
 
 end_time = time.time()
 execution_time = end_time - start_time
@@ -95,4 +103,4 @@ visualization = Visualizer(rand_env, simulator_2)
 visualization.save_occ_map(filename='occ_map_apf.png')  # Generates occ_map.png
 visualization.save_paths(filename='paths_apf.png')    # Generates path.png
 # visualization.plot_potential_field(potential_field, skip=5, filename="potential_field.png")
-visualization.animate_swarm(filename='animation_apf.gif')
+# visualization.animate_swarm(filename='animation_apf.gif')
