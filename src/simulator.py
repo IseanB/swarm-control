@@ -31,6 +31,7 @@ class Simulator:
       self.survivors_found = 0
       self.actors = []
       self.wpts = all_wpts
+      self.wpts_loc = []
       next_pos = 0
       if init == 'close':
         self.close_init()
@@ -122,3 +123,19 @@ class Simulator:
     def schedule_WPT(self):
       self.wpts.scheduling(self.environment.return_occ_map(), self.actors, 82)
       return None
+
+    def move_wpts(self, distance=0.05):
+      self.wpts.move_wpts(distance)
+      self.record_wpts_position()
+
+    def record_wpts_position(self):
+      locs = []
+      for wpt in self.wpts.get_wpts():
+        locs.append(wpt.get_pos())
+      self.wpts_loc.append(locs)
+    
+    def get_wpts_position(self):
+      return self.wpts_loc
+    
+    def print_wpts_pos(self):
+      print(self.wpts_loc)
