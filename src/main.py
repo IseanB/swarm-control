@@ -57,14 +57,15 @@ visualization.save_paths(filename='path_random_walk.png') # Generates path.png
 # visualization.animate_swarm(filename='animation_random_walk.gif') # Generates animation.gif # this causes a lot of slowdowns
 
 # ---------- APF Run ----------
-np.random.seed(10)
+np.random.seed(1)
 rand_env = Environment((width, height))
 rand_env.random_obstacles(num_obstacles, max_vertices, max_size)
 rand_env.add_survivors(5, (width/5, height/2), 15)
 rand_env.add_survivors(10, (width/2, height/5), 20)
 
 all_wpts = WPTS()
-all_wpts.add_wpt((0,10),(2,2,0), math.pi / 4)
+all_wpts.add_wpt((0,100),(20,50,0), math.pi / 4)
+all_wpts.add_wpt((0,70),(60,10,0), math.pi)
 # goal call scheduling
 simulator_2 = Simulator(num_actors, rand_env, all_wpts, init='random')
 
@@ -83,10 +84,11 @@ potential_field = AdaptivePotentialField(rand_env, simulator_2, params)
 start_time = time.time()
 
 dt = 1
+simulator_2.move_with_potential_field(potential_field, steps=200, search_range=robot_search_radius)
 for i in range(200):
-    simulator_2.move_with_potential_field(potential_field, steps=dt, search_range=robot_search_radius)
+    simulator_2.move_wpts(0.01)
     
-simulator_2.schedule_WPT()
+# simulator_2.schedule_WPT()
 
 
 end_time = time.time()
