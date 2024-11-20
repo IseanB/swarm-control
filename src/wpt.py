@@ -28,9 +28,9 @@ class WPT:
         else:
             self.alpha = new_alpha
     
-    def scene_transformation(self):
+    def scene_transformation(self, amplitude=1,b=0.5):
         x = self.get_x()
-        y = math.sin(x)
+        y = amplitude*math.sin(x*b)
         pos = np.array([x, y, 0])
 
         # Rotation matrix
