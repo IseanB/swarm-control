@@ -12,7 +12,7 @@ class WPT:
         self.rotation = rotation
         self.translation = translation
         self.alpha = 0
-        self.pos = self.__scene_transformation()
+        self.pos = self.scene_transformation()
 
     def get_pos(self):
         return pos
@@ -20,7 +20,7 @@ class WPT:
     def get_x(self):
         return self.x_min*(1-self.alpha) + self.x_max*(self.alpha)
     
-    def __update_alpha(self, new_alpha):
+    def update_alpha(self, new_alpha):
         if(new_alpha<0):
             self.alpha = 0
         elif(new_alpha>1):
@@ -28,7 +28,7 @@ class WPT:
         else:
             self.alpha = new_alpha
     
-    def __scene_transformation(self):
+    def scene_transformation(self):
         x = self.get_x()
         y = math.sin(x)
         pos = np.array([x, y, 0])
@@ -49,10 +49,44 @@ class WPT:
         pos = self.__scene_transformation()
         return pos
 
+class WPTS:
+    def __init__(self):
+        self.wpts = []
+
+    def add_wpt(self, x_val, translation, rotation):
+       self.wpts.append(WPT(x_val, translation, rotation))
+
+    def scheduling(self, occupany_map, robots, omega):
+        '''
+        Input:
+        - List of all WPTs in enviorment
+        - global occupancy_map
+        - robots position w/ battery information
+        - 
+
+        Output:
+        - WPTs movement toward assigned goal.
+        '''
+        PSelected = []
+
+        #Store critical drones positions
+        robot_info = [(robot.get_position(), robot.get_battery()) for robot in robots]
+        # print("Pre filiter", robot_info)
+        dr_centroid_pos = []
+        for robot in robot_info:
+            if robot[1]<omega:
+                dr_centroid_pos.append(robot[0])
+
+        fr_nodes = []
+        
+
+        # print("Post filiter", dr_centroid_pos)
+
+
 def plot_WPT_scene_transformations():
     # Define parameters
     x_range = (0, 10)
-    translation = [2, 2, 0]
+    translation = (2, 2, 0)
     rotation = math.pi / 4  # 30 degrees
     # translation = [0, 0, 0]
     # rotation = 0
