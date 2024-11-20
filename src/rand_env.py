@@ -61,9 +61,49 @@ class Environment:
     def get_obstacles(self):
       return self.obstacles
 
+    def is_point_in_polygon(self, point, polygon):
+      x, y = point
+      inside = False
+      n = len(polygon)
+      
+      for i in range(n):
+          x1, y1 = polygon[i]
+          x2, y2 = polygon[(i + 1) % n]
+          if (y > min(y1, y2)) and (y <= max(y1, y2)) and (x <= max(x1, x2)):
+              if y1 != y2:
+                  xinters = (y - y1) * (x2 - x1) / (y2 - y1) + x1
+                  if xinters > x:
+                      inside = not inside
+      return inside
+
+    def mark_obstacle_on_map(self, polygon):
+      # Get the environment size
+      size_x, size_y = self.size
+      
+      # Create a bounding box for the polygon to limit the area we check
+      min_x, min_y = np.min(polygon, axis=0)
+      max_x, max_y = np.max(polygon, axis=0)
+      
+      # Iterate over the cells within the bounding box
+      for i in range(int(max(0, min_x)), int(min(size_x, max_x + 1))):
+          for j in range(int(max(0, min_y)), int(min(size_y, max_y + 1))):
+              # Check if the cell's center is inside the polygon
+              if self.is_point_in_polygon((i + 0.5, j + 0.5), polygon):
+                # print("Marking obstacle")
+                self.occupancy_map[i, j] = -10
+
     def random_obstacles(self, num_obstacles, max_vertex, max_size):
       for _ in range(num_obstacles):
-        self.obstacles.append(self.generate_random_polygon(num_vertices = np.random.randint(3, max_vertex+1), size = np.random.rand()*max_size, offsetx = np.random.rand()*self.size[0], offsety = np.random.rand()*self.size[1]))
+        polygon = self.generate_random_polygon(
+            num_vertices=np.random.randint(3, max_vertex + 1), 
+            size=np.random.rand() * max_size, 
+            offsetx=np.random.rand() * self.size[0], 
+            offsety=np.random.rand() * self.size[1]
+        )
+        self.obstacles.append(polygon)
+        
+        # Discretize the polygon on the occupancy map
+        self.mark_obstacle_on_map(polygon)
 
     def generate_random_polygon(self, num_vertices, size, offsetx, offsety):
       """Generates a random non-intersecting polygon with the given number of vertices.
@@ -116,22 +156,27 @@ class Environment:
     def return_occ_map(self):
       return (self.occupancy_map)
     
-    def obstacle_collision(self, position):
+    def obstacle_collision(self, position, discretized=True):
       """
       Determines whether a point is inside an obstacle.
       """
-      x, y = position
       inside = False
+      if(not discretized):
+        x, y = position
+        
 
-      for obstacle in self.obstacles:
-        for i in range(len(obstacle)):
-          x1, y1 = obstacle[i]
-          x2, y2 = obstacle[(i+1) % len(obstacle)]
-          if (y > min(y1, y2)) and (y <= max(y1, y2)) and (x <= max(x1, x2)):
-            if y1 != y2:
-              xinters = (y - y1) * (x2 - x1) / (y2 - y1) + x1
-              if xinters > x:
-                inside = not inside
+        for obstacle in self.obstacles:
+          for i in range(len(obstacle)):
+            x1, y1 = obstacle[i]
+            x2, y2 = obstacle[(i+1) % len(obstacle)]
+            if (y > min(y1, y2)) and (y <= max(y1, y2)) and (x <= max(x1, x2)):
+              if y1 != y2:
+                xinters = (y - y1) * (x2 - x1) / (y2 - y1) + x1
+                if xinters > x:
+                  inside = not inside
+      elif (discretized):
+        if (self.occupancy_map[position] > 0):
+          inside = True
       return inside
 
     def add_survivors(self, num_survivors, centroid_point=(width/2, height/2), std_dev=1.0):

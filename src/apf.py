@@ -153,10 +153,11 @@ class AdaptivePotentialField:
             new_pos = np.round(new_pos).astype(int)  # Assuming grid positions
             # Ensure new_pos is valid
             size = self.environment.get_size()
+            
             if (
                 0 <= new_pos[0] < size[0]
                 and 0 <= new_pos[1] < size[1]
-                and not self.environment.obstacle_collision(new_pos)
+                and not self.environment.obstacle_collision(tuple(new_pos))
                 and self.swarm.is_valid_move(tuple(new_pos))
             ):
                 # Move robot
