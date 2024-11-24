@@ -30,6 +30,7 @@ class Survivor:
         self.position = position
         self.status = "not found"
         self.time_in_env = 0
+        self.detected_by = set()
 
     def get_position(self):
         return self.position
@@ -41,7 +42,7 @@ class Survivor:
         self.status = "found"
 
     def increment_time(self):
-        if(self.status != "found"):
+        if self.status != "found":
             self.time_in_env += 1
 
 

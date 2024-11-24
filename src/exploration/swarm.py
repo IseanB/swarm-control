@@ -33,6 +33,7 @@ class Swarm:
         self.num_actors = num_actors
         self.survivors_found = 0
         self.actors = {}
+        self.global_explored_map = np.zeros(self.environment.get_size(), dtype=bool)
         if init == "close":
             self.close_init()
         elif init == "random":
@@ -40,12 +41,25 @@ class Swarm:
         if init == "wpt":
             self.wpt_init()
 
+    def update_global_explored_map(self):
+        """
+        Updates the global explored map by combining the local explored maps of all robots.
+        """
+        # Reset global map
+        self.global_explored_map = np.zeros(self.environment.get_size(), dtype=bool)
+        # Combine all robots' local maps
+        for robot in self.actors.values():
+            self.global_explored_map = np.logical_or(self.global_explored_map, robot.local_explored_map)
+
+    def get_global_explored_map(self):
+        return self.global_explored_map
+
     def close_init(self):
         next_pos = 0
         id = 0
         while len(self.actors) < self.num_actors:
             if self.is_valid_move((0, next_pos)):
-                self.actors[id] = Robot(id, (0, next_pos))
+                self.actors[id] = Robot(id, (0, next_pos), sensing_radius=1, detection_radius=1, swarm=self)
                 id += 1
             else:
                 next_pos += 1
@@ -58,7 +72,7 @@ class Swarm:
                 np.random.randint(0, self.environment.get_size()[1]),
             )
             if self.is_valid_move(pos):
-                self.actors[id] = Robot(id, pos)
+                self.actors[id] = Robot(id, pos, sensing_radius=1, detection_radius=1, swarm=self)
                 id += 1
 
     def wpt_init(self):
@@ -162,7 +176,8 @@ class Swarm:
                 survivor.increment_time()
 
     def move_with_potential_field(self, potential_field, steps=100, search_range=1):
-        for _ in range(steps):
+        for i in range(steps):
+
             potential_field.compute_next_positions()
             self.detect_survivors(range=search_range)
             for bot in self.actors.values():
@@ -194,16 +209,6 @@ class Swarm:
             ax.plot(x_pos, y_pos)
         fig.suptitle("Swarm Paths")
         fig.savefig(visualization_dir + "path.png")
-
-    def move_with_potential_field(self, potential_field, steps=100, search_range=1):
-        for _ in range(steps):
-            potential_field.compute_next_positions()
-            self.detect_survivors(range=search_range)
-            for bot in self.actors.values():
-                self.environment.update_occ_map(bot.get_position(), search_range)
-                bot.mission_time += 1
-            for survivor in self.environment.get_survivors():
-                survivor.increment_time()
 
     def animate(self, interval=200, filename='animation.gif'):
         """

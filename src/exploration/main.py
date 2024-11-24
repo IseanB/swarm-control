@@ -10,20 +10,33 @@ import time
 from environment import *
 from visualizer import *
 from swarm import *
-from apf import *
+from apf_exploration import *
 
 
 # Global param.
 
-width = 15
-height = 15
-num_actors = 1
-num_obstacles = 0
+width = 50
+height = 50
+num_actors = 10
+num_obstacles = 10
 max_vertices = 4
-max_size = 100
+max_size = 10
 robot_search_radius = 1 # defined a circle around each robot that is considered "explored"
+steps = 500
 visualization_dir = "./visual_results/"
 np.random.seed(1)
+
+#APF Params
+params = {
+    'k_att': 1000.0,
+    'k_rep': 100.0,
+    'Q_star': 10.0,
+    'delta': 0.5,
+    'step_size': 0.8,
+    'k_exp': 50000,  # Coefficient for repulsion from explored areas
+    'k_robot_rep': 500000.0,  # Coefficient for repulsion between robots
+    'robot_repulsion_distance': 5000.0,  # Distance threshold for robot repulsion
+}
 
 class Evaluator:
     """
@@ -103,7 +116,7 @@ class Evaluator:
 
 
 ### Random Walk
-def run_swarm():
+def run_swarm_random_walk():
     np.random.seed(1)
     rand_env = Environment((width, height))
     rand_env.random_obstacles(num_obstacles, max_vertices, max_size)
@@ -114,7 +127,7 @@ def run_swarm():
 
     start_time = time.time()
 
-    test_swarm.random_walk(15, robot_search_radius)
+    test_swarm.random_walk(steps, robot_search_radius)
     test_swarm.print_tree()
 
     end_time = time.time()
@@ -135,6 +148,8 @@ def run_swarm():
         filename="animation_random_walk.gif"
     )  # Generates animation.gif # this causes a lot of slowdowns
 
+
+def run_swarm_apf():
     # APF
     np.random.seed(1)
     rand_env = Environment((width, height))
@@ -144,16 +159,6 @@ def run_swarm():
 
     test_swarm = Swarm(num_actors, rand_env, init="random")
 
-    # Define parameters for the potential field
-    params = {
-        "k_att": 100.0,  # Attractive potential gain
-        "k_bat": 1.0,  # Attractive Battery Gain
-        "k_rep": 1.0,  # Repulsive potential gain
-        "Q_star": 10.0,  # Obstacle influence distance
-        "step_size": 1.0,  # Step size for robot movement
-        "delta": 1e-2,  # Small value for numerical gradient
-    }
-
     # Create the potential field planner
     start_time = time.time()
 
@@ -161,7 +166,7 @@ def run_swarm():
 
     # Move the swarm using the potential field
     test_swarm.move_with_potential_field(
-        potential_field, steps=200, search_range=robot_search_radius
+        potential_field, steps=steps, search_range=robot_search_radius
     )
 
     end_time = time.time()
@@ -178,7 +183,7 @@ def run_swarm():
     visualization.save_occ_map(filename="occ_map_apf.png")  # Generates occ_map.png
     visualization.save_paths(filename="paths_apf.png")  # Generates path.png
     # visualization.plot_potential_field(potential_field, skip=5, filename="potential_field.png")
-    # visualization.animate_swarm(filename="animation_apf.gif")
+    visualization.animate_swarm(filename="animation_apf.gif")
 
 
 def run_swarm_wpt():
@@ -239,15 +244,6 @@ def run_swarm_wpt():
     test_swarm_apf = Swarm(num_actors, env, init="wpt")
     # print(test_swarm_apf.actors)
 
-    params = {
-        "k_att": 100.0,  # Attractive potential gain
-        "k_bat": 5,  # Attractive potential for charging
-        "k_rep": 1.0,  # Repulsive potential gain
-        "Q_star": 10.0,  # Obstacle influence distance
-        "step_size": 1.0,  # Step size for robot movement
-        "delta": 1e-2,  # Small value for numerical gradient
-    }
-
     # Create the potential field planner
     start_time = time.time()
 
@@ -255,7 +251,7 @@ def run_swarm_wpt():
 
     # Move the swarm using the potential field
     test_swarm_apf.move_with_potential_field(
-        potential_field, steps=1000, search_range=robot_search_radius
+        potential_field, steps=steps, search_range=robot_search_radius
     )
 
     # print movement tree
@@ -288,14 +284,6 @@ def run_swarm_tree_test():
     test_swarm = Swarm(num_actors, rand_env, init="random")
 
     start_time = time.time()
-    params = {
-        "k_att": 100.0,  # Attractive potential gain
-        "k_bat": 5,  # Attractive potential for charging
-        "k_rep": 1.0,  # Repulsive potential gain
-        "Q_star": 10.0,  # Obstacle influence distance
-        "step_size": 1.0,  # Step size for robot movement
-        "delta": 1e-2,  # Small value for numerical gradient
-    }
 
     # Create the potential field planner
     start_time = time.time()
@@ -303,7 +291,7 @@ def run_swarm_tree_test():
     potential_field = AdaptivePotentialField(rand_env, test_swarm, params)
 
     test_swarm.move_with_potential_field(
-        potential_field, steps=200, search_range=robot_search_radius
+        potential_field, steps=steps, search_range=robot_search_radius
     )
     test_swarm.print_tree()
 
@@ -318,7 +306,9 @@ def run_swarm_tree_test():
     )  # Generates animation.gif # this causes a lot of slowdowns
 
 
-run_swarm_tree_test()
+# run_swarm_tree_test()
+run_swarm_apf()
+run_swarm_random_walk()
 
 
 """

@@ -128,3 +128,31 @@ class Visualizer:
         # Save the animation
         anim.save(self.visualization_dir + filename, writer="pillow")
         plt.close(fig)
+
+    def plot_agent_explored_areas(swarm):
+        plt.figure(figsize=(12, 8))
+        plt.title('Agents\' Explored Areas')
+        # Plot obstacles
+        for obstacle in swarm.environment.get_obstacles():
+            x_obs, y_obs = zip(*obstacle)
+            plt.fill(x_obs, y_obs, color='grey', alpha=0.5)
+
+        # Plot each agent's explored area
+        for robot in swarm.actors.values():
+            explored_positions = np.argwhere(robot.local_explored_map == True)
+            plt.scatter(explored_positions[:, 0], explored_positions[:, 1], s=1, label=f'Robot {robot.get_id()} Explored')
+
+        # Plot survivors
+        survivors_positions = [s.get_position() for s in swarm.environment.get_survivors()]
+        x_s, y_s = zip(*survivors_positions)
+        plt.scatter(x_s, y_s, marker='*', color='red', s=100, label='Survivors')
+
+        # Plot robots' positions
+        x_r = [robot.get_position()[0] for robot in swarm.actors.values()]
+        y_r = [robot.get_position()[1] for robot in swarm.actors.values()]
+        plt.scatter(x_r, y_r, marker='o', color='black', s=50, label='Robots')
+
+        plt.legend()
+        plt.xlabel('X')
+        plt.ylabel('Y')
+        plt.show()

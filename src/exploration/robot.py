@@ -15,7 +15,7 @@ class Robot:
     Basic robot class that can move and keeps track of past postions
     """
 
-    def __init__(self, ID, start_pos):
+    def __init__(self, ID, start_pos, sensing_radius=None, detection_radius=None, swarm=None):
         self.id = ID
         self.pos = start_pos
         self.path = [start_pos]
@@ -24,6 +24,11 @@ class Robot:
         self.max_charge = max_charge
         self.battery = 100
         self.current_node = Path_Node(None, start_pos, 0)
+
+        self.sensing_radius = sensing_radius
+        self.detection_radius = detection_radius
+        self.local_explored_map = np.copy(swarm.get_global_explored_map())
+        self.swarm = swarm
 
     def move(self, new_pos):
         distance = np.linalg.norm(np.array(self.pos) - np.array(new_pos))
@@ -37,6 +42,21 @@ class Robot:
                 self.pos = new_pos
             return True
         return False
+    
+
+    def update_local_explored_map(self):
+        """
+        Updates the local explored map based on the robot's current position and sensing radius.
+        """
+        x, y = self.pos
+        x_min = max(0, int(x - self.sensing_radius))
+        x_max = min(self.local_explored_map.shape[0], int(x + self.sensing_radius) + 1)
+        y_min = max(0, int(y - self.sensing_radius))
+        y_max = min(self.local_explored_map.shape[1], int(y + self.sensing_radius) + 1)
+        for i in range(x_min, x_max):
+            for j in range(y_min, y_max):
+                if np.linalg.norm(np.array([i, j]) - np.array([x, y])) <= self.sensing_radius:
+                    self.local_explored_map[i, j] = True
 
     def update_node(self, parent, pos):
         distance_moved = np.linalg.norm(np.array(parent.get_pos()) - np.array(pos))
