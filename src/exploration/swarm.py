@@ -162,7 +162,8 @@ class Swarm:
                 survivor.increment_time()
 
     def move_with_potential_field(self, potential_field, steps=100, search_range=1):
-        for _ in range(steps):
+        for i in range(steps):
+            # print("step: ", i)
             potential_field.compute_next_positions()
             self.detect_survivors(range=search_range)
             for bot in self.actors.values():

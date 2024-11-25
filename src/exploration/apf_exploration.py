@@ -110,9 +110,8 @@ class AdaptivePotentialField:
         U = U_att + U_rep
         return U
 
-    def compute_gradient(self, robot):
+    def compute_gradient(self, robot, position):
         # Numerically approximate the gradient
-        position = np.array(robot.get_position(), dtype=float)
         delta = self.params['delta']  # Small value for numerical gradient
 
         # Compute the attractive potential and nearest survivor
@@ -145,27 +144,38 @@ class AdaptivePotentialField:
 
         return grad
 
+    # set arrow directions in this function
+    # we want the apf to plot when exploring and not when charge backtracking
+    # keep track of apf at robot level, only for plotting
+    # make it optional, plot_apf_arrows
     def compute_next_positions(self):
         self.step += 1
+        # print("computing position")
         for robot in self.swarm.actors.values():
             current_pos = np.array(robot.get_position(), dtype=float)
             if (
                 robot.get_current_node().get_distance()
                 >= robot.get_remaining_distance()
             ):  # turning threshold
+                U, V = self.get_arrow_directions(robot, True)
                 if robot.get_current_node().get_parent():  # check if at root
                     self.swarm.move(
                         robot.get_id(), robot.get_current_node().get_parent().get_pos()
                     )  # move the current robot to its parent nodes position
             else:
-                grad = self.compute_gradient(robot)
+                grad = self.compute_gradient(robot, current_pos)
+                U, V = self.get_arrow_directions(robot, False)
+
                 if np.linalg.norm(grad) == 0:
-                    continue  # Skip if gradient is zero
+                    print("zero gradient")
+                    self.swarm.move(robot.get_id(), tuple(robot.get_position()))
+                    robot.add_arrow_directions(U, V)
+                    continue  # Skip if gradient is stay where you are
                 # Move in the negative gradient direction
                 step_size = self.params["step_size"]
                 direction = -grad / np.linalg.norm(grad)
                 new_pos = current_pos + step_size * direction
-                new_pos = np.round(new_pos).astype(int)  # Assuming grid positions
+                # new_pos = np.round(new_pos).astype(int)  # Assuming grid positions
                 # Ensure new_pos is valid
                 size = self.environment.get_size()
                 if (
@@ -176,9 +186,29 @@ class AdaptivePotentialField:
                 ):
                     # Move robot
                     self.swarm.move(robot.get_id(), tuple(new_pos))
+                else:  # Move to current pos to track path
+                    self.swarm.move(robot.get_id(), tuple(current_pos))
                 # self.visualizer.save_frames(filename=f'paths_apf_{self.step}.png')
+            robot.add_arrow_directions(U, V)
+
+    def get_arrow_directions(self, robot, backtracking):
+        U = []
+        V = []
+        # want only 50 points evenly spaced
+        for r in range(self.environment.get_size()[0]):
+            for c in range(self.environment.get_size()[1]):
+                if backtracking:  # if turning around no arrows
+                    U.append(0)
+                    V.append(0)
+                else:  # moving forward means get arrow directions
+                    grad = self.compute_gradient(robot, [r, c])
+                    U.append(-1 * float(grad[0]))
+                    V.append(-1 * float(grad[1]))
+
+        return U, V
 
 
+'''
 def gradient_plot(potential_field, xlim, ylim, skip=10):
     """
     Plots the gradient field of the potential field over the environment.
@@ -238,3 +268,17 @@ def gradient_plot(potential_field, xlim, ylim, skip=10):
     plt.xlabel('X')
     plt.ylabel('Y')
     plt.show()
+'''
+
+"""'
+How to make plotter work for 1 robot
+On the time step of transistion we need robot's position, occupancy map, and current goal. 
+then we can generate arrow directions based on these
+    while simulator is running generate arrow directions based on values being used and save inside the visualizer
+then we can plot after run for each time step to complete animation
+
+
+1. function to generate arrow directions for every position given occupancy map
+2. function to plot arrows and robots position and goal
+3. function to do this for every step
+"""

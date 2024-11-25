@@ -24,8 +24,17 @@ class Robot:
         self.max_charge = max_charge
         self.battery = 100
         self.current_node = Path_Node(None, start_pos, 0)
+        # Use this to do the arrow directions each bot keeps track of its historical arrow directions
+        self.arrow_directions = {"U": [], "V": []}
+        """
+        self.arrow_directions{ 'U' = [[step1], [step2], [step3]]
+        'V' = [[step1], [step2], [step3]]
+        }
+        self.arrow_directions['U'][step1] = [0, .5, .6, ...., .74, .25]
+        """
 
     def move(self, new_pos):
+        # print("moving to: ", new_pos)
         distance = np.linalg.norm(np.array(self.pos) - np.array(new_pos))
         if self.battery > 0:
             if self.battery - (battery_burn * distance) > 0:
@@ -68,6 +77,13 @@ class Robot:
 
     def get_current_node(self):
         return self.current_node
+
+    def add_arrow_directions(self, U, V):
+        self.arrow_directions["U"].append(U)
+        self.arrow_directions["V"].append(V)
+
+    def get_arrow_directions(self):
+        return self.arrow_directions
 
 
 class Path_Node:

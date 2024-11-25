@@ -10,7 +10,7 @@ import time
 from environment import *
 from visualizer import *
 from swarm import *
-from apf import *
+from apf_exploration import *
 
 
 # Global param.
@@ -318,18 +318,59 @@ def run_swarm_tree_test():
     )  # Generates animation.gif # this causes a lot of slowdowns
 
 
-run_swarm_tree_test()
+def test_apf_plotter():
+    width = 50
+    height = 50
+    num_actors = 4
+    num_obstacles = 1
+    max_vertices = 4
+    max_size = 5
+    robot_search_radius = (
+        1  # defined a circle around each robot that is considered "explored"
+    )
+    np.random.seed(1)
+    rand_env = Environment((width, height))
+
+    obstacle_0 = [
+        [25.0, 25.0],
+        [27.5, 25.0],
+        [30.0, 27.5],
+        [30.0, 30.0],
+        [27.5, 32.5],
+        [25.0, 32.5],
+        [22.5, 30.0],
+        [22.5, 27.5],
+    ]
+    obstacle_1 = [[75.0, 25.0], [80.0, 25.0], [80.0, 75.0], [75.0, 75.0]]
+    obstacle_2 = [[25.0, 75.0], [30.0, 70.0], [35.0, 80.0], [37.5, 60.0]]
+    obstacles = [obstacle_0, obstacle_1, obstacle_2]
+    rand_env.set_obstacles(obstacles)
+    rand_env.add_survivors(5, (width / 5, height / 5), 15)
+
+    test_swarm = Swarm(num_actors, rand_env, init="random")
+
+    params = {
+        "k_att": 100.0,  # Attractive potential gain
+        "k_bat": 5,  # Attractive potential for charging
+        "k_rep": 40.0,  # Repulsive potential gain
+        "Q_star": 10.0,  # Obstacle influence distance
+        "step_size": 1.0,  # Step size for robot movement
+        "delta": 1e-2,  # Small value for numerical gradient
+    }
+
+    potential_field = AdaptivePotentialField(rand_env, test_swarm, params)
+    test_swarm.move_with_potential_field(
+        potential_field, steps=50, search_range=robot_search_radius
+    )
+
+    # print("U:", test_swarm.actors[0].get_arrow_directions()["U"][15])
+    visualization = Visualizer(rand_env, test_swarm)
+    visualization.animate_apf(0)
+    visualization.animate_apf(1)
+    visualization.animate_apf(2)
+    visualization.animate_apf(3)
+    visualization.animate_swarm(filename="apf_vis.gif")
 
 
-"""
-ToDo:
-How will this affect compute?
-Make the tree done
-each tree will be kept track of at the robot level, done
-on a valid move the swarm will check if that position has been visited by any other robots done
-if it is then get that node from that robot and add that node to the robots tree done
-set the current node to that with its distance and parents done
-then need to add backtrace 
-this will get taken care of when telling the bot to move to position of parent
-current 
-"""
+test_apf_plotter()
+# run_swarm_tree_test()
