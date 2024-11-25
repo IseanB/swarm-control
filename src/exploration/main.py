@@ -11,6 +11,7 @@ from environment import *
 from visualizer import *
 from swarm import *
 from apf_exploration import *
+from aoi import *
 
 
 # Global param.
@@ -18,7 +19,7 @@ from apf_exploration import *
 width = 50
 height = 50
 num_actors = 10
-num_obstacles = 10
+num_obstacles = 50
 max_vertices = 4
 max_size = 10
 robot_search_radius = 1 # defined a circle around each robot that is considered "explored"
@@ -28,14 +29,14 @@ np.random.seed(1)
 
 #APF Params
 params = {
-    'k_att': 1000.0,
-    'k_rep': 100.0,
+    'k_att': 10.0,
+    'k_rep': 10.0,
     'Q_star': 10.0,
     'delta': 0.5,
-    'step_size': 0.8,
-    'k_exp': 50000,  # Coefficient for repulsion from explored areas
-    'k_robot_rep': 500000.0,  # Coefficient for repulsion between robots
-    'robot_repulsion_distance': 5000.0,  # Distance threshold for robot repulsion
+    'step_size': 0.5,
+    'k_exp': 1.0,  # Coefficient for repulsion from explored areas
+    'k_robot_rep': 1.0,  # Coefficient for repulsion between robots
+    'robot_repulsion_distance': 1.0,  # Distance threshold for robot repulsion
 }
 
 class Evaluator:
@@ -305,6 +306,47 @@ def run_swarm_tree_test():
         filename="animation_random_walk_test.gif"
     )  # Generates animation.gif # this causes a lot of slowdowns
 
+def run_ui(environment):
+    flight_area_vertices = define_flight_area(environment)
+    return flight_area_vertices
+
+def run_swarm_apf():
+    # APF
+    np.random.seed(1)
+    rand_env = Environment((width, height))
+    flight_area_vertices = run_ui(environment=rand_env)
+
+    rand_env.random_obstacles(num_obstacles, max_vertices, max_size)
+    rand_env.add_survivors(5, (width / 5, height / 2), 15)
+    rand_env.add_survivors(10, (width / 2, height / 5), 20)
+
+    test_swarm = Swarm(num_actors, rand_env, init="random")
+
+    # Create the potential field planner
+    start_time = time.time()
+
+    potential_field = AdaptivePotentialField(rand_env, test_swarm, params, flight_area_vertices)
+
+    # Move the swarm using the potential field
+    test_swarm.move_with_potential_field(
+        potential_field, steps=steps, search_range=robot_search_radius
+    )
+
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"Execution time: {execution_time} seconds")
+
+    # Evaluation
+    evaluator = Evaluator(test_swarm, rand_env)
+    evaluator.evaluate()
+
+    # Visualizations
+    # gradient_plot(potential_field, [0,width], [0,height])
+    visualization = Visualizer(rand_env, test_swarm)
+    visualization.save_occ_map(filename="occ_map_apf.png")  # Generates occ_map.png
+    visualization.save_paths(filename="paths_apf.png")  # Generates path.png
+    # visualization.plot_potential_field(potential_field, skip=5, filename="potential_field.png")
+    visualization.animate_swarm(filename="animation_apf.gif")
 
 # run_swarm_tree_test()
 run_swarm_apf()

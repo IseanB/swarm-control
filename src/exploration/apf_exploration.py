@@ -7,67 +7,56 @@ from matplotlib.path import Path
 rc('animation', html='jshtml')
 from scipy.spatial import ConvexHull
 from visualizer import *
-
-
-# Global parameters
-# width = 200
-# height = 200
-# num_actors = 20
-# num_obstacles = 15
-# max_vertices = 10
-# max_size = 10
-# robot_search_radius = 1  # Defined as a circle around each robot that is considered "explored"
-# visualization_dir = "./visual_results/"
-# np.random.seed(1)
+from shapely.geometry import Polygon, Point
+from shapely.ops import nearest_points
 
 class AdaptivePotentialField:
     """
     Implements a gradient planner using adaptive potential fields to guide the swarm to the survivors.
     """
-    def __init__(self, environment, swarm, params):
+    def __init__(self, environment, swarm, params, aoi_vertices):
         self.environment = environment
         self.swarm = swarm
         self.params = params  # Parameters for potential field
         self.step = 0
         self.assigned_survivors = {}  # Maps survivor positions to assigned robot IDs
+        self.aoi_vertices = aoi_vertices
+        self.aoi_polygon = Polygon(self.aoi_vertices)
 
-    def compute_attractive_potential(self, robot):
+    def compute_attractive_potential(self, position, robot):
         """
         Computes the attractive potential for the robot. If the robot is assigned to a survivor,
         it is attracted to the survivor's position. Otherwise, it is attracted to unexplored areas.
         """
-        position = robot.get_position()
+        
+        # Compute the minimum distance to flight areas
+        robot_point = Point(position)
+        U0 = 1
+        # No assigned survivor, attract to area of interest
+        robot_point = Point(position)
 
-        # Check if the robot is assigned to any survivor
-        assigned = False
-        target_survivor_pos = None
-        for survivor_pos, robot_id in self.assigned_survivors.items():
-            if robot_id == robot.get_id():
-                assigned = True
-                target_survivor_pos = survivor_pos
-                break
-
-        if assigned:
-            # Robot is assigned to a survivor, compute attraction
-            dist = np.linalg.norm(np.array(position) - np.array(target_survivor_pos))
-            U_att = 0.5 * self.params['k_att'] * dist ** 2
-            return U_att, target_survivor_pos
+        if self.aoi_polygon.contains(robot_point):
+            # Inside the area of interest
+            U_att = U0
         else:
-            # No assigned survivor, attract to unexplored areas
-            unexplored_positions = np.argwhere(robot.local_explored_map == False)
-            if len(unexplored_positions) == 0:
-                # All areas have been explored
-                return 0, None
-            # Find the nearest unexplored position
-            min_dist = np.inf
-            nearest_unexplored = None
-            for pos in unexplored_positions:
-                dist = np.linalg.norm(np.array(position) - pos)
-                if dist < min_dist:
-                    min_dist = dist
-                    nearest_unexplored = pos
-            U_att = 0.5 * self.params['k_att'] * min_dist ** 2
-            return U_att, nearest_unexplored
+            # Outside the area of interest, compute distance to polygon
+            d = robot_point.distance(self.aoi_polygon)
+            U_att = U0 + 0.5 * self.params['k_att'] * d ** 2
+
+        # No assigned survivor, attract to unexplored areas
+        unexplored_positions = np.argwhere(robot.local_explored_map == False)
+        if len(unexplored_positions) == 0:
+            # All areas have been explored
+            return 0, None
+        # Find the nearest unexplored position
+        min_dist = np.inf
+        for pos in unexplored_positions:
+            dist = np.linalg.norm(np.array(position) - pos)
+            if dist < min_dist:
+                min_dist = dist
+        U_att += 0.5 * self.params['k_att'] * min_dist ** 2
+
+        return U_att
 
     def compute_repulsive_potential(self, position, robot):
         """
@@ -85,14 +74,23 @@ class AdaptivePotentialField:
 
         # Repulsion from explored areas
         explored_map = self.swarm.get_global_explored_map()
-        # U_rep += explored_map[position[0]] * self.params['k_exp']
 
         x, y = int(position[0]), int(position[1])
-        if 0 <= x < explored_map.shape[0] and 0 <= y < explored_map.shape[1]:
-            if explored_map[x, y]:
-                # Position is in an explored area, add repulsive potential
-                U_rep += self.params['k_exp']
-                # print(self.params['k_exp'])
+        half_width = 4 // 2
+
+        # Get the bounds of the square region, ensuring they stay within the map limits
+        x_min = max(x - half_width, 0)
+        x_max = min(x + half_width + 1, explored_map.shape[0])
+        y_min = max(y - half_width, 0)
+        y_max = min(y + half_width + 1, explored_map.shape[1])
+
+        # Extract the region from the explored_map
+        region = explored_map[x_min:x_max, y_min:y_max]
+        
+        # Sum the values in the region to get the total explored area
+        total_explored = np.sum(region)
+
+        U_rep += self.params['k_exp'] * total_explored
 
         # Repulsion from other robots
         for other_robot in self.swarm.actors.values():
@@ -155,13 +153,17 @@ class AdaptivePotentialField:
         position = np.array(robot.get_position(), dtype=float)
         delta = self.params['delta']
 
-        # Compute the attractive potential and target position
-        U_att, target_pos = self.compute_attractive_potential(robot)
-        if target_pos is None:
-            return np.zeros(2)  # No gradient if no target
-
-        # Compute gradient analytically for the attractive potential
-        grad_att = self.params["k_att"] * (position - target_pos)
+        grad_att = np.zeros(2)
+        pos_x_plus = np.array([position[0] + delta, position[1]])
+        pos_x_minus = np.array([position[0] - delta, position[1]])
+        pos_y_plus = np.array([position[0], position[1] + delta])
+        pos_y_minus = np.array([position[0], position[1] - delta])
+        U_att_x_plus = self.compute_attractive_potential(pos_x_plus, robot)
+        U_att_x_minus = self.compute_attractive_potential(pos_x_minus, robot)
+        U_att_y_plus = self.compute_attractive_potential(pos_y_plus, robot)
+        U_att_y_minus = self.compute_attractive_potential(pos_y_minus, robot)
+        grad_att[0] = (U_att_x_plus - U_att_x_minus) / (2 * delta)
+        grad_att[1] = (U_att_y_plus - U_att_y_minus) / (2 * delta)
 
         # Compute repulsive gradient numerically
         grad_rep = np.zeros(2)
@@ -213,14 +215,14 @@ class AdaptivePotentialField:
 
             # Compute the gradient for movement
             grad = self.compute_gradient(robot)
-            if np.linalg.norm(grad) == 0:
-                continue  # Skip if gradient is zero
+            if np.linalg.norm(grad) < 0.1:
+                grad = np.random.rand(2)  # Skip if gradient is zero
 
             # Move in the negative gradient direction
             step_size = self.params["step_size"]
             direction = -grad / np.linalg.norm(grad)
             new_pos = current_pos + step_size * direction
-            new_pos = np.round(new_pos).astype(int)  # Assuming grid positions
+            # new_pos = np.round(new_pos).astype(int)  # Assuming grid positions
 
             # Ensure new_pos is valid
             size = self.environment.get_size()
@@ -250,65 +252,3 @@ class AdaptivePotentialField:
 
         # Assign the closest robot
         self.assigned_survivors[survivor.get_position()] = closest_robot_id
-
-
-
-def gradient_plot(potential_field, xlim, ylim, skip=10):
-    """
-    Plots the gradient field of the potential field over the environment.
-    """
-    # Create a grid over the environment
-    x_min, x_max = xlim
-    y_min, y_max = ylim
-    x = np.arange(x_min, x_max, skip)
-    y = np.arange(y_min, y_max, skip)
-    X, Y = np.meshgrid(x, y)
-
-    U = np.zeros_like(X, dtype=float)
-    grad_U_x = np.zeros_like(U)
-    grad_U_y = np.zeros_like(U)
-
-    # Compute the potential and gradient at each point
-    for i in range(X.shape[0]):
-        for j in range(X.shape[1]):
-            position = (X[i, j], Y[i, j])
-            if potential_field.environment.obstacle_collision(position):
-                U[i, j] = np.nan  # Assign NaN to obstacles
-                grad_U_x[i, j] = np.nan
-                grad_U_y[i, j] = np.nan
-                continue
-            U[i, j] = potential_field.compute_potential(position)
-            grad = potential_field.compute_gradient(position)
-            grad_U_x[i, j] = -grad[0]  # Negative gradient
-            grad_U_y[i, j] = -grad[1]
-
-    # Plot the gradient field
-    plt.figure(figsize=(12, 8))
-    plt.title('Gradient Field of the Potential')
-    Q = plt.quiver(X, Y, grad_U_x, grad_U_y, pivot='mid', units='inches')
-    qk = plt.quiverkey(Q, 0.9, 0.9, 1, r'$1 \frac{units}{s}$', labelpos='E', coordinates='figure')
-
-    # Plot obstacles
-    for obstacle in potential_field.environment.get_obstacles():
-        x_obs, y_obs = zip(*obstacle)
-        plt.fill(x_obs, y_obs, color='blue', alpha=0.5)
-
-    # Plot survivors
-    survivors_found = [s for s in potential_field.environment.get_survivors() if s.is_found()]
-    survivors_not_found = [s for s in potential_field.environment.get_survivors() if not s.is_found()]
-    if survivors_not_found:
-        x_nf, y_nf = zip(*[s.get_position() for s in survivors_not_found])
-        plt.scatter(x_nf, y_nf, marker='*', color='red', s=100, label='Survivor Not Found')
-    if survivors_found:
-        x_f, y_f = zip(*[s.get_position() for s in survivors_found])
-        plt.scatter(x_f, y_f, marker='*', color='green', s=100, label='Survivor Found')
-
-    # Plot robots' positions
-    x_r = [bot.get_position()[0] for bot in potential_field.swarm.actors]
-    y_r = [bot.get_position()[1] for bot in potential_field.swarm.actors]
-    plt.scatter(x_r, y_r, marker='o', color='black', s=20, label='Robots')
-
-    plt.legend()
-    plt.xlabel('X')
-    plt.ylabel('Y')
-    plt.show()
