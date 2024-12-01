@@ -54,30 +54,15 @@ class Simulator:
 
     def is_valid_move(self, position):
       size = self.environment.get_size()
-      if self.obstacle_collision(position) or position[0] < 0 or position[1] < 0 or position[0] >= size[0] or position[1] >= size[1]:
+      # Cases: 1) out of bounds, 2) within another robot 3) within an obstacle
+      if position[0] < 0 or position[1] < 0 or position[0] >= size[0] or position[1] >= size[1]:
         return False
       for bot in self.actors:
         if bot.get_position() == position:
           return False
+      if self.environment.obstacle_collision(position):
+        return False
       return True
-
-    def obstacle_collision(self, position):
-      """
-      Determines whether a point is inside an obstacle.
-      """
-      x, y = position
-      inside = False
-
-      for obstacle in self.environment.get_obstacles():
-        for i in range(len(obstacle)):
-          x1, y1 = obstacle[i]
-          x2, y2 = obstacle[(i+1) % len(obstacle)]
-          if (y > min(y1, y2)) and (y <= max(y1, y2)) and (x <= max(x1, x2)):
-            if y1 != y2:
-              xinters = (y - y1) * (x2 - x1) / (y2 - y1) + x1
-              if xinters > x:
-                inside = not inside
-      return inside
 
     def detect_survivors(self, range=1):
         """
