@@ -13,6 +13,10 @@ class WPT:
         self.translation = translation
         self.alpha = 0
         self.pos = self.scene_transformation()
+        self.path = [self.pos]
+
+    def get_path(self):
+        return self.path
 
     def get_pos(self):
         return self.pos
@@ -47,11 +51,15 @@ class WPT:
     def move(self, distance=.05):
         self.update_alpha(self.alpha + distance)
         self.pos = self.scene_transformation()
+        self.path.append(self.pos)
         return self.pos
 
 class WPTS:
     def __init__(self):
         self.wpts = []
+
+    def num_of_wpts(self):
+        return len(self.wpts)
 
     def get_wpts(self):
         return self.wpts
@@ -63,13 +71,13 @@ class WPTS:
         for wpt in self.wpts:
             wpt.move(distance)
 
-    def scheduling(self, occupany_map, robots, omega):
+    def scheduling(self, occupany_map, robots, omega=0.3):
         '''
         Input:
         - List of all WPTs in enviorment
         - global occupancy_map
         - robots position w/ battery information
-        - 
+        - omega, critical battery level
 
         Output:
         - WPTs movement toward assigned goal.
@@ -78,13 +86,22 @@ class WPTS:
 
         #Store critical drones positions
         robot_info = [(robot.get_position(), robot.get_battery()) for robot in robots]
-        # print("Pre filiter", robot_info)
-        dr_centroid_pos = []
-        for robot in robot_info:
-            if robot[1]<omega:
-                dr_centroid_pos.append(robot[0])
 
-        fr_nodes = []
+        # Filter out "Drones needing Recharge"(dr) with battery level less than omega
+        dr_centroid_pos = [robot[0] for robot in robot_info if robot[1] < omega]
+
+        # Filter out "FRontier"(fr) drones with battery level greater than omega
+        fr_pos = [robot[0] for robot in robot_info if robot[1] >= omega]
+
+        for wpt in self.wpts:
+            # Calculate distance between WPT and DRones needing Recharge
+            distance = [np.linalg.norm(np.array(wpt.get_pos()) - np.array(drone_pos)) for drone_pos in dr_centroid_pos]
+            # Calculate distance between WPT and FRontier drones
+            distance += [np.linalg.norm(np.array(wpt.get_pos()) - np.array(drone_pos)) for drone_pos in fr_pos]
+
+            # Calculate PSelected
+            PSelected.append(sum(distance))
+        
 
 
         # print("Post filiter", dr_centroid_pos)

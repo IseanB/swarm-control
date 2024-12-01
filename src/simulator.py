@@ -77,7 +77,6 @@ class Simulator:
                     if distance <= range:
                         survivor.mark_as_found()
                         self.survivors_found += 1
-                        # print(f"Survivor found at {survivor_pos} by robot at {bot_pos}.")
 
     def random_walk(self, steps=100, search_range=1):
       for _ in range(steps):
@@ -111,16 +110,6 @@ class Simulator:
 
     def move_wpts(self, distance=0.05):
       self.wpts.move_wpts(distance)
-      self.record_wpts_position()
-
-    def record_wpts_position(self):
-      locs = []
-      for wpt in self.wpts.get_wpts():
-        locs.append(wpt.get_pos())
-      self.wpts_loc.append(locs)
     
     def get_wpts_position(self):
       return self.wpts_loc
-    
-    def print_wpts_pos(self):
-      print(self.wpts_loc)

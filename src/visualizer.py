@@ -67,15 +67,15 @@ class Visualizer:
         y_r = [bot.get_position()[1] for bot in self.swarm.actors]
         # print(y_r)
         ax.scatter(x_r, y_r, marker='o', color='black', s=20, label='Robots')
-        # Plot WPTs
-        # Separate the two sets of points
-        data = self.swarm.get_wpts_position()
-        wpt_index = 0
-        if(len(data) != 0): #no wpts in env
-            print(len(data[0]))
-            for i in range(len(data[0])):
-                set1 = np.array([pair[i] for pair in data])
-                ax.scatter(set1[:, 0], set1[:, 1], marker='^', s=10, alpha=0.7, label='WPT 1')
+        # # Plot WPTs
+        # # Separate the two sets of points
+        # data = self.swarm.get_wpts_position()
+        # wpt_index = 0
+        # if(len(data) != 0): #no wpts in env
+        #     print(len(data[0]))
+        #     for i in range(len(data[0])):
+        #         set1 = np.array([pair[i] for pair in data])
+        #         ax.scatter(set1[:, 0], set1[:, 1], marker='^', s=10, alpha=0.7, label='WPT 1')
                 
         return fig, ax
 
@@ -109,9 +109,15 @@ class Visualizer:
         """
         fig, ax = self.draw_map()
         lines = []
+
         # Create lines for each robot
         for bot in self.swarm.actors:
             line, = ax.plot([], [], lw=2)
+            lines.append(line)
+
+        # Create lines for each wpt
+        for _ in self.swarm.wpts.get_wpts():
+            line, = ax.plot([], [], lw=4)
             lines.append(line)
 
         # Animation function
@@ -121,11 +127,12 @@ class Visualizer:
             return lines
 
         def animate_func(i):
-            for line, bot in zip(lines, self.swarm.actors):
+            for line, bot in zip(lines, self.swarm.actors + self.swarm.wpts.get_wpts()): #animate robots
                 path = bot.get_path()
                 if i < len(path):
                     x_pos, y_pos = zip(*path[:i + 1])
                     line.set_data(x_pos, y_pos)
+
             return lines
 
         # Determine the number of frames
