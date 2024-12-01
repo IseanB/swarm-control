@@ -20,7 +20,7 @@ from evaluate import *
 width = 100
 height = 100
 num_actors = 20
-num_obstacles = 15
+num_obstacles = 10
 max_vertices = 4
 max_size = 100
 robot_search_radius = 1 # defined a circle around each robot that is considered "explored"
@@ -84,11 +84,11 @@ potential_field = AdaptivePotentialField(rand_env, simulator_2, params)
 start_time = time.time()
 
 dt = 1
-simulator_2.move_with_potential_field(potential_field, steps=200, search_range=robot_search_radius)
+# simulator_2.move_with_potential_field(potential_field, steps=200, search_range=robot_search_radius)
 for i in range(200):
     simulator_2.move_wpts(0.01)
+    simulator_2.move_with_potential_field(potential_field,dt,robot_search_radius)
     
-# simulator_2.schedule_WPT()
 
 
 end_time = time.time()
