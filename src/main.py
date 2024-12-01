@@ -8,7 +8,7 @@ rc('animation', html='jshtml')
 from scipy.spatial import ConvexHull
 import time
 
-from rand_env import *
+from environment import *
 from visualizer import *
 from simulator import *
 from apf import *
