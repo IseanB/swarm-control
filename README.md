@@ -11,7 +11,12 @@
   -  ```pip install matplotlib```
   -  ```pip install seaborn```
   -  ```pip install scipy```
-5. Run python script
-  - ```python3 main.py```
+
+
+## Running Simulation
+1. Go to the repository.
+   - ```cd /path/to/your/project```.
+2. Run python script
+  - ```python3 src/main.py```
 
 
