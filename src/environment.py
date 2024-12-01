@@ -174,7 +174,6 @@ class Environment:
           # Ensure the generated position is within the environment boundaries and not inside an obstacle
           if 0 <= x < self.size[0] and 0 <= y < self.size[1] and not self.obstacle_collision((x, y)):
             self.survivors.append(Survivor((x, y)))
-            print(f"Survivor added at {x, y}", "has ", self.occupancy_map[(x,y)])
             break
       
     def get_survivors(self):
