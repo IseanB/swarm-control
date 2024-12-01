@@ -101,8 +101,8 @@ evaluator.evaluate()
 
 # Visualizations
 # gradient_plot(potential_field, [0,width], [0,height])
-visualization = Visualizer(rand_env, simulator_2)
-visualization.save_occ_map(filename='occ_map_apf.png')  # Generates occ_map.png
-visualization.save_paths(filename='paths_apf.png')    # Generates path.png
+# visualization = Visualizer(rand_env, simulator_2)
+# visualization.save_occ_map(filename='occ_map_apf.png')  # Generates occ_map.png
+# visualization.save_paths(filename='paths_apf.png')    # Generates path.png
 # visualization.plot_potential_field(potential_field, skip=5, filename="potential_field.png")
 # visualization.animate_swarm(filename='animation_apf.gif')

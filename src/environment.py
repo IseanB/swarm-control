@@ -18,6 +18,7 @@ max_vertices = 4
 max_size = 100
 visualization_dir = "./visual_results/"
 np.random.seed(1)
+OCCUPANCY_OBSTACLE_VALUE = -10
 
 class Survivor:
     """
@@ -76,6 +77,10 @@ class Environment:
       return inside
 
     def mark_obstacle_on_map(self, polygon):
+      """
+      Discretizes the polygon on the occupancy map, by marking the cells inside the polygon as -10.
+      """
+
       # Get the environment size
       size_x, size_y = self.size
       
@@ -89,7 +94,7 @@ class Environment:
               # Check if the cell's center is inside the polygon
               if self.is_point_in_polygon((i + 0.5, j + 0.5), polygon):
                 # print("Marking obstacle")
-                self.occupancy_map[i, j] = -10
+                self.occupancy_map[i, j] = OCCUPANCY_OBSTACLE_VALUE
 
     def random_obstacles(self, num_obstacles, max_vertex, max_size):
       for _ in range(num_obstacles):
@@ -99,15 +104,14 @@ class Environment:
             offsetx=np.random.rand() * self.size[0], 
             offsety=np.random.rand() * self.size[1]
         )
+
+        # Needed for visualization
         self.obstacles.append(polygon)
         
         # Discretize the polygon on the occupancy map
         self.mark_obstacle_on_map(polygon)
 
     def generate_random_polygon(self, num_vertices, size, offsetx, offsety):
-      """Generates a random non-intersecting polygon with the given number of vertices.
-      ToDo add random offset for both x and y
-      """
       # Generate random points
       points = np.random.rand(num_vertices, 2)
       #print(points)
@@ -126,9 +130,6 @@ class Environment:
       #print(polygon_vertices)
       return polygon_vertices
 
-    def set_obstacles(self, obstacles):
-      self.obstacles = obstacles
-
     def update_occ_map(self, new_pos, radius):
       # if(new_pos[0]<0 or new_pos[1]<0 or new_pos[0]>=self.size[0] or new_pos[1]>=self.size[0]):
       try:
@@ -145,7 +146,7 @@ class Environment:
         for i in range(x_min, x_max):
             for j in range(y_min, y_max):
                 # Check if the cell is within the specified radius from new_pos
-                if (i - x) ** 2 + (j - y) ** 2 <= radius ** 2:
+                if (i - x) ** 2 + (j - y) ** 2 <= radius ** 2 and not self.obstacle_collision((i, j)):
                     self.occupancy_map[i, j] += 1
       except:
         print("ERROR: occupancy_map update FAILED ")
@@ -155,28 +156,13 @@ class Environment:
     def return_occ_map(self):
       return (self.occupancy_map)
     
-    def obstacle_collision(self, position, discretized=True):
+    def obstacle_collision(self, position):
       """
       Determines whether a point is inside an obstacle.
       """
-      inside = False
-      if(not discretized):
-        x, y = position
-        
-
-        for obstacle in self.obstacles:
-          for i in range(len(obstacle)):
-            x1, y1 = obstacle[i]
-            x2, y2 = obstacle[(i+1) % len(obstacle)]
-            if (y > min(y1, y2)) and (y <= max(y1, y2)) and (x <= max(x1, x2)):
-              if y1 != y2:
-                xinters = (y - y1) * (x2 - x1) / (y2 - y1) + x1
-                if xinters > x:
-                  inside = not inside
-      elif (discretized):
-        if (self.occupancy_map[position] > 0):
-          inside = True
-      return inside
+      if (self.occupancy_map[position] == OCCUPANCY_OBSTACLE_VALUE):
+        return True
+      return False
 
     def add_survivors(self, num_survivors, centroid_point=(width/2, height/2), std_dev=1.0):
       for _ in range(num_survivors):
@@ -188,6 +174,7 @@ class Environment:
           # Ensure the generated position is within the environment boundaries and not inside an obstacle
           if 0 <= x < self.size[0] and 0 <= y < self.size[1] and not self.obstacle_collision((x, y)):
             self.survivors.append(Survivor((x, y)))
+            print(f"Survivor added at {x, y}", "has ", self.occupancy_map[(x,y)])
             break
       
     def get_survivors(self):
