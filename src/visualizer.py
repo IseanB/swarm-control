@@ -52,7 +52,7 @@ class Visualizer:
         # Plot obstacles
         for obstacle in self.environment.get_obstacles():
             x, y = zip(*obstacle)
-            ax.fill(x, y, color='blue', alpha=0.5)
+            ax.fill(x, y, color='grey', alpha=0.7)
         # Plot survivors
         survivors_found = [s for s in self.environment.get_survivors() if s.is_found()]
         survivors_not_found = [s for s in self.environment.get_survivors() if not s.is_found()]
@@ -103,7 +103,7 @@ class Visualizer:
         plt.savefig(self.visualization_dir + 'frames/' + filename)
         plt.close()
 
-    def animate_swarm(self, interval=200, filename='animation.gif'):
+    def animate_swarm(self, interval=200, filename='animation.gif', shortenDronePath=False, shortenWPTPath=True):
         """
         Animates the plotting of the swarm.
         """
@@ -112,12 +112,12 @@ class Visualizer:
 
         # Create lines for each robot
         for bot in self.swarm.actors:
-            line, = ax.plot([], [], lw=2)
+            line, = ax.plot([], [], linestyle='-', lw=2)
             lines.append(line)
 
         # Create lines for each wpt
         for _ in self.swarm.wpts.get_wpts():
-            line, = ax.plot([], [], lw=4)
+            line, = ax.plot([], [], linestyle='-', lw=10, color='navy', alpha=0.7)
             lines.append(line)
 
         # Animation function
@@ -127,11 +127,33 @@ class Visualizer:
             return lines
 
         def animate_func(i):
-            for line, bot in zip(lines, self.swarm.actors + self.swarm.wpts.get_wpts()): #animate robots
+            for line, bot in zip(lines[:len(self.swarm.actors)], self.swarm.actors): #animate robots
                 path = bot.get_path()
-                if i < len(path):
-                    x_pos, y_pos = zip(*path[:i + 1])
-                    line.set_data(x_pos, y_pos)
+                if(shortenDronePath):
+                    if i < len(path) and i < 5:
+                        x_pos, y_pos = zip(*path[:i+1])
+                        line.set_data(x_pos, y_pos)
+                    if i < len(path)-1 and i >= 5:
+                        x_pos, y_pos = zip(*path[i-5:i+1])
+                        line.set_data(x_pos, y_pos)
+                else:
+                    if i < len(path):
+                        x_pos, y_pos = zip(*path[:i + 1])
+                        line.set_data(x_pos, y_pos)
+
+            for line, bot in zip(lines[len(self.swarm.actors):],self.swarm.wpts.get_wpts()): #animate robots
+                path = bot.get_path()
+                if(shortenWPTPath):
+                    if i < len(path) and i < 2:
+                        x_pos, y_pos = zip(*path[:i+1])
+                        line.set_data(x_pos, y_pos)
+                    if i < len(path)-1 and i >= 2:
+                        x_pos, y_pos = zip(*path[i-2:i+1])
+                        line.set_data(x_pos, y_pos)
+                else:
+                    if i < len(path):
+                        x_pos, y_pos = zip(*path[:i + 1])
+                        line.set_data(x_pos, y_pos)
 
             return lines
 
