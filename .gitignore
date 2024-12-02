@@ -3,3 +3,4 @@ visual_results/*.png
 env/
 
 *pycache*
+*.DS_Store*
