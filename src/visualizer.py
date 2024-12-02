@@ -53,6 +53,7 @@ class Visualizer:
         for obstacle in self.environment.get_obstacles():
             x, y = zip(*obstacle)
             ax.fill(x, y, color='grey', alpha=0.7)
+        
         # Plot survivors
         survivors_found = [s for s in self.environment.get_survivors() if s.is_found()]
         survivors_not_found = [s for s in self.environment.get_survivors() if not s.is_found()]
@@ -62,20 +63,23 @@ class Visualizer:
         if survivors_found:
             x_f, y_f = zip(*[s.get_position() for s in survivors_found])
             ax.scatter(x_f, y_f, marker='*', color='green', s=100, label='Survivor Found')
+        
         # Plot robots
         x_r = [bot.get_position()[0] for bot in self.swarm.actors]
         y_r = [bot.get_position()[1] for bot in self.swarm.actors]
-        # print(y_r)
         ax.scatter(x_r, y_r, marker='o', color='black', s=20, label='Robots')
-        # # Plot WPTs
-        # # Separate the two sets of points
-        # data = self.swarm.get_wpts_position()
-        # wpt_index = 0
-        # if(len(data) != 0): #no wpts in env
-        #     print(len(data[0]))
-        #     for i in range(len(data[0])):
-        #         set1 = np.array([pair[i] for pair in data])
-        #         ax.scatter(set1[:, 0], set1[:, 1], marker='^', s=10, alpha=0.7, label='WPT 1')
+        
+        # Plot WPTs
+        wpt_paths_data = [wpt.get_path() for wpt in self.swarm.wpts.get_wpts()]
+        wpt_index = 0
+        if(len(wpt_paths_data) != 0):
+            for data in wpt_paths_data:
+                wpt_index += 1
+
+                x = [point[0] for point in data]
+                y = [point[1] for point in data]
+
+                ax.scatter(x, y, marker='^', s=10, alpha=0.7, label=f'WPT {wpt_index}')
                 
         return fig, ax
 
