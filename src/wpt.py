@@ -2,16 +2,19 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 
+BASELINE_OMEGA = 30
+
 class WPT:
     """
     Basic WPT class that can move.
     """
-    def __init__(self, x_val, translation, rotation):
+    def __init__(self, x_val, translation, rotation, initial_alpha=0):
         self.x_min = x_val[0]
         self.x_max = x_val[1]
         self.rotation = rotation
         self.translation = translation
-        self.alpha = 0
+        self.alpha = 0 #Range: [0,1]
+        self.update_alpha(initial_alpha) # initial_alpha is initializing the wpt potition to be (initial_alpha)*100 percent into the path.
         self.pos = self.scene_transformation()
         self.path = [self.pos]
 
@@ -21,7 +24,9 @@ class WPT:
     def get_pos(self):
         return self.pos
 
-    def get_x(self):
+    def get_x(self, in_alpha=None):
+        if in_alpha is not None:
+            return self.x_min*(1-in_alpha) + self.x_max*(in_alpha)
         return self.x_min*(1-self.alpha) + self.x_max*(self.alpha)
     
     def update_alpha(self, new_alpha):
@@ -32,8 +37,8 @@ class WPT:
         else:
             self.alpha = new_alpha
     
-    def scene_transformation(self, amplitude=1,b=0.5):
-        x = self.get_x()
+    def scene_transformation(self, amplitude=6,b=0.1, in_alpha=None):
+        x = self.get_x(in_alpha)
         y = amplitude*math.sin(x*b)
         pos = np.array([x, y, 0])
 
@@ -54,9 +59,28 @@ class WPT:
         self.path.append(self.pos)
         return self.pos
 
+    def move_towards(self, curr_target, distance):
+        if(self.alpha + distance > 1):
+            self.move(-distance)
+            return
+        elif(self.alpha - distance < 0):
+            self.move(distance)
+            return
+
+        forward_pos = self.scene_transformation(in_alpha=distance)
+        forward_dist = np.linalg.norm(np.array(forward_pos) - np.array(curr_target), ord=2)
+        curr_dist = np.linalg.norm(np.array(self.pos) - np.array(curr_target), ord=2)
+
+        if curr_dist > forward_dist:
+            self.move(distance)
+        else:
+            self.move(-distance)
+
 class WPTS:
     def __init__(self):
         self.wpts = []
+        self.assignments = [] # (wpt_index, drone_pos, "RECHARGE" or "FRONTIER")
+        self.clock = 0
 
     def num_of_wpts(self):
         return len(self.wpts)
@@ -64,18 +88,14 @@ class WPTS:
     def get_wpts(self):
         return self.wpts
 
-    def add_wpt(self, x_val, translation, rotation):
-       self.wpts.append(WPT(x_val, translation, rotation)) # represents state and ???
+    def add_wpt(self, x_val, translation, rotation, initial_alpha):
+       self.wpts.append(WPT(x_val, translation, rotation, initial_alpha)) # represents state and ???
 
-    def basic_move_wpts(self, distance=0.05):   
+    def basic_move_wpts(self, distance=0.005): 
         for wpt in self.wpts:
-            wpt.move(distance)
+            wpt.move(distance)  
 
-    def autonomous_movement_wpts(self, distance=0.05):   
-        for wpt in self.wpts:
-            wpt.move(distance)
-
-    def scheduling(self, occupany_map, robots, omega=30):
+    def scheduling(self, occupany_map, robots, omega=BASELINE_OMEGA):
         '''
         Input:
         - self.wpts: List of all WPTs in enviorment
@@ -137,8 +157,9 @@ class WPTS:
             if (assigned_wpts.count(True) == len(self.wpts)): # Bounds Complexity
                 break
 
-        # print("assignments", assignments)
-                
+        assignments.sort(key=lambda x: x[0]) # Sort by wpt index
+        print("assignments", assignments)
+        self.assignments = assignments
         return assignments
 
 

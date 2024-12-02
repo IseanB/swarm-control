@@ -31,12 +31,15 @@ class Simulator:
       self.survivors_found = 0
       self.actors = []
       self.wpts = all_wpts
-      self.wpts_loc = []
+      self.autonomous_scheduling_clock = 0
       next_pos = 0
       if init == 'close':
         self.close_init()
       elif init == 'random':
         self.random_init()
+
+    def increment_a_clock(self):
+        self.autonomous_scheduling_clock += 1
 
     def close_init(self):
       next_pos = 0
@@ -104,12 +107,27 @@ class Simulator:
             for survivor in self.environment.get_survivors():
                 survivor.increment_time()
 
-    def schedule_WPT(self, CRITICAL_BATTERY_LEVEL = 45):
-      self.wpts.scheduling(self.environment.return_occ_map(), self.actors, CRITICAL_BATTERY_LEVEL)
+    def autonomous_movement_wpts(self, omega, schedulingHz=10, step_dist=0.005): 
+        all_wpts = self.wpts.get_wpts()
+        if self.autonomous_scheduling_clock % schedulingHz == 0 or self.wpts.assignments == []: # reschedule targets for all wpts
+            self.schedule_WPT(omega)
+        
+        if self.wpts.assignments != []: # ensuring no assignments = all drones dead
+          if self.autonomous_scheduling_clock % schedulingHz != 0:
+              for wpt_index in range(len(all_wpts)): # move towards assigned drone
+                if(wpt_index != self.wpts.assignments[wpt_index][0]):
+                  throw("Error in autonomous_movement_wpts: index mismatch")
+                else:
+                  curr_target = self.wpts.assignments[wpt_index][1]
+                  all_wpts[wpt_index].move_towards(curr_target, step_dist)
+        else:
+          for wpt_index in range(len(all_wpts)): # move towards assigned drone
+            all_wpts[wpt_index].move(0)
+
+    def schedule_WPT(self, omega):
+      self.wpts.scheduling(self.environment.return_occ_map(), self.actors, omega)
       return None
 
     def basic_move_wpts(self, distance=0.05):
       self.wpts.basic_move_wpts(distance)
     
-    def get_wpts_position(self):
-      return self.wpts_loc
