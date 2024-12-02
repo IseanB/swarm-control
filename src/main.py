@@ -17,8 +17,8 @@ from evaluate import *
 
 # Global param.
 
-width = 100
-height = 100
+width = 400
+height = 400
 num_actors = 20
 num_obstacles = 10
 max_vertices = 4
@@ -28,36 +28,36 @@ visualization_dir = "./visual_results/"
 np.random.seed(1)
 
 ### ---------- Random Walk ----------
-np.random.seed(10)
-rand_env = Environment((width, height))
-rand_env.random_obstacles(num_obstacles, max_vertices, max_size)
-rand_env.add_survivors(5, (width/5, height/2), 15)
-rand_env.add_survivors(10, (width/2, height/5), 20)
+# np.random.seed(10)
+# rand_env = Environment((width, height))
+# rand_env.random_obstacles(num_obstacles, max_vertices, max_size)
+# rand_env.add_survivors(5, (width/5, height/2), 15)
+# rand_env.add_survivors(10, (width/2, height/5), 20)
 
-all_wpts = WPTS()
-# all_wpts.add_wpt((0,10),(2,2,0), math.pi / 4)
+# all_wpts = WPTS()
+# # all_wpts.add_wpt((0,10),(2,2,0), math.pi / 4)
 
-simulator_1 = Simulator(num_actors, rand_env, all_wpts, init = 'random')
+# simulator_1 = Simulator(num_actors, rand_env, all_wpts, init = 'random')
 
-start_time = time.time()
-simulator_1.random_walk(200,robot_search_radius)
-end_time = time.time()
+# start_time = time.time()
+# simulator_1.random_walk(200,robot_search_radius)
+# end_time = time.time()
 
-execution_time = end_time - start_time
-print(f"Execution time: {execution_time} seconds")
+# execution_time = end_time - start_time
+# print(f"Execution time: {execution_time} seconds")
 
-# Evaluation
-evaluator = Evaluator(simulator_1, rand_env)
-evaluator.evaluate()
+# # Evaluation
+# evaluator = Evaluator(simulator_1, rand_env)
+# evaluator.evaluate()
 
-#Visualizations
-visualization = Visualizer(rand_env, simulator_1)
-visualization.save_occ_map(filename='occ_map_random_walk.png')  # Generates occ_map.png
-visualization.save_paths(filename='path_random_walk.png') # Generates path.png
-# visualization.animate_swarm(filename='animation_random_walk.gif') # Generates animation.gif # this causes a lot of slowdowns
+# #Visualizations
+# visualization = Visualizer(rand_env, simulator_1)
+# visualization.save_occ_map(filename='occ_map_random_walk.png')  # Generates occ_map.png
+# visualization.save_paths(filename='path_random_walk.png') # Generates path.png
+# # visualization.animate_swarm(filename='animation_random_walk.gif') # Generates animation.gif # this causes a lot of slowdowns
 
 # ---------- APF Run ----------
-np.random.seed(12)
+np.random.seed(120)
 rand_env = Environment((width, height))
 rand_env.random_obstacles(num_obstacles, max_vertices, max_size)
 rand_env.add_survivors(5, (width/5, height/2), 15)
@@ -84,11 +84,14 @@ potential_field = AdaptivePotentialField(rand_env, simulator_2, params)
 start_time = time.time()
 
 dt = 1
-# simulator_2.move_with_potential_field(potential_field, steps=200, search_range=robot_search_radius)
-for i in range(200):
-    simulator_2.move_wpts(0.01)
+# simulator_2.move_with_potential_field(potential_field, steps=200, search_range=robot_search_radius) 
+for i in range(100):
+    simulator_2.basic_move_wpts(0.005)
     simulator_2.move_with_potential_field(potential_field,dt,robot_search_radius)
-    
+    simulator_2.schedule_WPT()
+
+for robot in simulator_2.actors:
+    print(robot.get_battery())
 
 
 end_time = time.time()
@@ -105,4 +108,4 @@ visualization = Visualizer(rand_env, simulator_2)
 visualization.save_occ_map(filename='occ_map_apf.png')  # Generates occ_map.png
 visualization.save_paths(filename='paths_apf.png')    # Generates path.png
 # visualization.plot_potential_field(potential_field, skip=5, filename="potential_field.png")
-# visualization.animate_swarm(filename='animation_apf.gif')
+visualization.animate_swarm(filename='animation_apf.gif')
