@@ -67,14 +67,16 @@ class WPT:
             self.move(distance)
             return
 
-        forward_pos = self.scene_transformation(in_alpha=distance)
+        forward_pos = self.scene_transformation(in_alpha=(self.alpha+distance))
         forward_dist = np.linalg.norm(np.array(forward_pos) - np.array(curr_target), ord=2)
         curr_dist = np.linalg.norm(np.array(self.pos) - np.array(curr_target), ord=2)
 
         if curr_dist > forward_dist:
             self.move(distance)
+            # print("++++++++++++++++")
         else:
             self.move(-distance)
+            # print("----------------")
 
 class WPTS:
     def __init__(self):

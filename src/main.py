@@ -86,7 +86,7 @@ start_time = time.time()
 dt = 1
 # simulator_2.move_with_potential_field(potential_field, steps=200, search_range=robot_search_radius) 
 for i in range(150):
-    simulator_2.basic_move_wpts(0.005)
+    # simulator_2.basic_move_wpts(0.005)
     simulator_2.move_with_potential_field(potential_field,dt,robot_search_radius)
     simulator_2.autonomous_movement_wpts(omega=30, schedulingHz=4,step_dist=0.005)
     # simulator_2.basic_move_wpts(0.005)
