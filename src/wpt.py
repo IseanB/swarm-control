@@ -67,44 +67,79 @@ class WPTS:
     def add_wpt(self, x_val, translation, rotation):
        self.wpts.append(WPT(x_val, translation, rotation)) # represents state and ???
 
-    def move_wpts(self, distance=0.05):   
+    def basic_move_wpts(self, distance=0.05):   
         for wpt in self.wpts:
             wpt.move(distance)
 
-    def scheduling(self, occupany_map, robots, omega=0.3):
+    def autonomous_movement_wpts(self, distance=0.05):   
+        for wpt in self.wpts:
+            wpt.move(distance)
+
+    def scheduling(self, occupany_map, robots, omega=30):
         '''
         Input:
-        - List of all WPTs in enviorment
-        - global occupancy_map
-        - robots position w/ battery information
-        - omega, critical battery level
+        - self.wpts: List of all WPTs in enviorment
+        - occupany_map: global occupancy_map
+        - robots: robots position w/ battery information
+        - omega: critical battery level
 
         Output:
-        - WPTs movement toward assigned goal.
+        - assignments: Points that each WPT needs to move toward.
         '''
-        PSelected = []
-
-        #Store critical drones positions
+        assignments = []
         robot_info = [(robot.get_position(), robot.get_battery()) for robot in robots]
+        # print("robot_info", robot_info)
 
-        # Filter out "Drones needing Recharge"(dr) with battery level less than omega
-        dr_centroid_pos = [robot[0] for robot in robot_info if robot[1] < omega]
-
-        # Filter out "FRontier"(fr) drones with battery level greater than omega
-        fr_pos = [robot[0] for robot in robot_info if robot[1] >= omega]
-
-        for wpt in self.wpts:
-            # Calculate distance between WPT and DRones needing Recharge
-            distance = [np.linalg.norm(np.array(wpt.get_pos()) - np.array(drone_pos)) for drone_pos in dr_centroid_pos]
-            # Calculate distance between WPT and FRontier drones
-            distance += [np.linalg.norm(np.array(wpt.get_pos()) - np.array(drone_pos)) for drone_pos in fr_pos]
-
-            # Calculate PSelected
-            PSelected.append(sum(distance))
+        # Select "Drones needing Recharge"(dr) with battery level less than omega and not dead.
+        dr_pos = [robot[0] for robot in robot_info if (int(robot[1]) < int(omega) and robot[1] > 0)]
         
+        # Select "FRontier"(fr) drones with battery level greater than omega.
+        fr_pos = [robot[0] for robot in robot_info if robot[1] >= omega]
+    
+        # Calculate Distance/Proximity between WPTs and DR Drones
+        distances_to_dr = []    
+        if(len(dr_pos) != 0):
+            distances_to_dr = []
+            wpt_index = 0
+            for wpt in self.wpts:
+                for drone_pos in dr_pos:
+                    distances = [np.linalg.norm(np.array(wpt.get_pos()) - np.array(drone_pos))]
+                    distances_to_dr.append((distances[0], drone_pos, wpt_index))
+                wpt_index += 1
+            distances_to_dr.sort(key=lambda x: x[0]) # Sort by distance to prioritize closer drones
 
+        # Calculate Distance/Proximity between WPTs and FR Drones
+        distances_to_fr = []
+        if(len(fr_pos) != 0):
+            wpt_index = 0
+            for wpt in self.wpts:
+                for drone_pos in fr_pos:
+                    distances = [np.linalg.norm(np.array(wpt.get_pos()) - np.array(drone_pos))]
+                    distances_to_fr.append((distances[0], drone_pos, wpt_index))
+                wpt_index += 1
 
-        # print("Post filiter", dr_centroid_pos)
+            distances_to_fr.sort(key=lambda x: x[0]) # Sort by distance to prioritize closer drones
+
+        # Assigning WPTs a drones to go towards
+        assigned_wpts = [False] * len(self.wpts)
+
+        for dist, drone_pos, wpt in distances_to_dr:
+            if(not assigned_wpts[wpt] and drone_pos != 0):
+                assignments.append((wpt, drone_pos, "RECHARGE"))
+                assigned_wpts[wpt] = True
+            if (assigned_wpts.count(True) == len(self.wpts)): # Bounds Complexity
+                break
+        
+        for dist, drone_pos, wpt in distances_to_fr:
+            if(not assigned_wpts[wpt]): 
+                assignments.append((wpt, drone_pos, "FRONTIER"))
+                assigned_wpts[wpt] = True
+            if (assigned_wpts.count(True) == len(self.wpts)): # Bounds Complexity
+                break
+
+        # print("assignments", assignments)
+                
+        return assignments
 
 
 def plot_WPT_scene_transformations():

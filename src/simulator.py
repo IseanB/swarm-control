@@ -104,12 +104,12 @@ class Simulator:
             for survivor in self.environment.get_survivors():
                 survivor.increment_time()
 
-    def schedule_WPT(self):
-      self.wpts.scheduling(self.environment.return_occ_map(), self.actors, 82)
+    def schedule_WPT(self, CRITICAL_BATTERY_LEVEL = 45):
+      self.wpts.scheduling(self.environment.return_occ_map(), self.actors, CRITICAL_BATTERY_LEVEL)
       return None
 
-    def move_wpts(self, distance=0.05):
-      self.wpts.move_wpts(distance)
+    def basic_move_wpts(self, distance=0.05):
+      self.wpts.basic_move_wpts(distance)
     
     def get_wpts_position(self):
       return self.wpts_loc
