@@ -60,12 +60,12 @@ np.random.seed(1)
 np.random.seed(120)
 rand_env = Environment((width, height))
 rand_env.random_obstacles(num_obstacles, max_vertices, max_size)
-rand_env.add_survivors(5, (width/5, height/2), 15)
-rand_env.add_survivors(10, (width/2, height/5), 20)
+rand_env.add_survivors(5, (width/2, height/2), 200)
+rand_env.add_survivors(10, (width/2, height/2), 400)
 
 all_wpts = WPTS()
-all_wpts.add_wpt((0,100),(20,50,0), math.pi / 4)
-all_wpts.add_wpt((0,70),(60,10,0), math.pi)
+all_wpts.add_wpt((0,200),(10,40,0), math.pi / 4, initial_alpha=0.5)
+all_wpts.add_wpt((0,400),(400,260,0), math.pi, initial_alpha=0.5)
 # goal call scheduling
 simulator_2 = Simulator(num_actors, rand_env, all_wpts, init='random')
 
@@ -85,14 +85,12 @@ start_time = time.time()
 
 dt = 1
 # simulator_2.move_with_potential_field(potential_field, steps=200, search_range=robot_search_radius) 
-for i in range(100):
+for i in range(150):
     simulator_2.basic_move_wpts(0.005)
     simulator_2.move_with_potential_field(potential_field,dt,robot_search_radius)
-    simulator_2.schedule_WPT()
-
-for robot in simulator_2.actors:
-    print(robot.get_battery())
-
+    simulator_2.autonomous_movement_wpts(omega=30, schedulingHz=4,step_dist=0.005)
+    # simulator_2.basic_move_wpts(0.005)
+    simulator_2.increment_a_clock()
 
 end_time = time.time()
 execution_time = end_time - start_time
