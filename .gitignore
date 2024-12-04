@@ -1,5 +1,6 @@
 visual_results/*.gif
 visual_results/*.png
+visual_results/wpt/*
 env/
 
 *pycache*
