@@ -24,6 +24,13 @@ class Robot:
         self.max_charge = max_charge
         self.battery = 100
         self.current_node = Path_Node(None, start_pos, 0)
+        self.arrow_directions = {"U": [], "V": []}
+        """
+        self.arrow_directions{ 'U' = [[step1], [step2], [step3]]
+        'V' = [[step1], [step2], [step3]]
+        }
+        self.arrow_directions['U'][step1] = [0, .5, .6, ...., .74, .25]
+        """
 
         self.sensing_radius = sensing_radius
         self.detection_radius = detection_radius
@@ -85,6 +92,17 @@ class Robot:
 
     def get_battery(self):
         return self.battery
+    
+    def add_arrow_directions(self, U, V):
+        self.arrow_directions["U"].append(U)
+        self.arrow_directions["V"].append(V)
+
+    def get_arrow_directions(self):
+        return self.arrow_directions
+
+    def get_current_node(self):
+        return self.current_node
+
 
 
 class Path_Node:

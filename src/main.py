@@ -57,9 +57,59 @@ np.random.seed(1)
 # visualization.save_paths(filename='path_random_walk.png') # Generates path.png
 # # visualization.animate_swarm(filename='animation_random_walk.gif') # Generates animation.gif # this causes a lot of slowdowns
 
+
 def run_ui(environment):
     flight_area_vertices = define_flight_area(environment)
     return flight_area_vertices
+
+def test_apf_plotter():
+        width = 10
+        height = 10
+        num_actors = 4
+        num_obstacles = 1
+        max_vertices = 4
+        max_size = 5
+        np.random.seed(1)
+        rand_env = Environment((width, height))
+
+        rand_env.random_obstacles(num_obstacles, max_vertices, max_size)
+        rand_env.add_survivors(5, (width / 5, height / 5), 15)
+
+        all_wpts = WPTS()
+
+        flight_area_vertices = run_ui(environment=rand_env)
+
+        # simulator_2 = Simulator(num_actors, rand_env, all_wpts, init='random')
+        test_swarm = Simulator(num_actors, rand_env, all_wpts, init="random")
+
+        params = {
+            'k_att': 10.0, # 100.0
+            'k_rep': 10.0,
+            "k_bat": 5,  # Attractive potential for charging
+            'Q_star': 10.0,
+            'delta': 0.5, #  1e-2  
+            'step_size': 0.5, # 1.0
+            'k_exp': 1.0,  # Coefficient for repulsion from explored areas
+            'k_robot_rep': 1.0,  # Coefficient for repulsion between robots
+            'robot_repulsion_distance': 1.0,  # Distance threshold for robot repulsion
+        }
+
+        potential_field = AdaptivePotentialField(rand_env, test_swarm, params,flight_area_vertices)
+        print("checkpoint 1")
+        test_swarm.move_with_potential_field(
+            potential_field, steps=10, search_range=robot_search_radius
+        )
+        print("checkpoint 2")
+        # print("U:", test_swarm.actors[0].get_arrow_directions()["U"][15])
+        visualization = Visualizer(rand_env, test_swarm)
+        print("checkpoint 3")
+        visualization.animate_apf(0)
+        visualization.animate_apf(1)
+        visualization.animate_apf(2)
+        visualization.animate_apf(3)
+        print("checkpoint 4")
+        visualization.animate_swarm(filename="apf_vis.gif")
+        print("checkpoint 5")
 
 # APF Params
 params = {
@@ -98,34 +148,37 @@ params = {
     'robot_repulsion_distance': 1.0,  # Distance threshold for robot repulsion
 }
 
-flight_area_vertices = run_ui(environment=rand_env)
 
-# Create the potential field planner
-potential_field = AdaptivePotentialField(rand_env, simulator_2, params, flight_area_vertices)
+test_apf_plotter()
 
-start_time = time.time()
+# flight_area_vertices = run_ui(environment=rand_env)
 
-dt = 1
-# simulator_2.move_with_potential_field(potential_field, steps=200, search_range=robot_search_radius) 
-for i in range(50):
-    # simulator_2.basic_move_wpts(0.005)
-    simulator_2.move_with_potential_field(potential_field,dt,robot_search_radius)
-    simulator_2.autonomous_movement_wpts(omega=30, schedulingHz=4,step_dist=0.005)
+# # Create the potential field planner
+# potential_field = AdaptivePotentialField(rand_env, simulator_2, params, flight_area_vertices)
+
+# start_time = time.time()
+
+# dt = 1
+# # simulator_2.move_with_potential_field(potential_field, steps=200, search_range=robot_search_radius) 
+# for i in range(50):
+#     # simulator_2.basic_move_wpts(0.005)
+#     simulator_2.move_with_potential_field(potential_field,dt,robot_search_radius)
+#     simulator_2.autonomous_movement_wpts(omega=30, schedulingHz=4,step_dist=0.005)
     
-    simulator_2.increment_a_clock()
+#     simulator_2.increment_a_clock()
 
-end_time = time.time()
-execution_time = end_time - start_time
-print(f"Execution time: {execution_time} seconds")
+# end_time = time.time()
+# execution_time = end_time - start_time
+# print(f"Execution time: {execution_time} seconds")
 
-# Evaluation
-evaluator = Evaluator(simulator_2, rand_env)
-evaluator.evaluate()
+# # Evaluation
+# evaluator = Evaluator(simulator_2, rand_env)
+# evaluator.evaluate()
 
-# Visualizations
-# gradient_plot(potential_field, [0,width], [0,height])
-visualization = Visualizer(rand_env, simulator_2)
-visualization.save_occ_map(filename='occ_map_apf.png')  # Generates occ_map.png
-visualization.save_paths(filename='paths_apf.png')    # Generates path.png
-# visualization.plot_potential_field(potential_field, skip=5, filename="potential_field.png")
-visualization.animate_swarm(filename='animation_apf.gif')
+# # Visualizations
+# # gradient_plot(potential_field, [0,width], [0,height])
+# visualization = Visualizer(rand_env, simulator_2)
+# visualization.save_occ_map(filename='occ_map_apf.png')  # Generates occ_map.png
+# visualization.save_paths(filename='paths_apf.png')    # Generates path.png
+# # visualization.plot_potential_field(potential_field, skip=5, filename="potential_field.png")
+# visualization.animate_swarm(filename='animation_apf.gif')

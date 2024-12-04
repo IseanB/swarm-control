@@ -43,7 +43,7 @@ class Visualizer:
         plt.close()
 
     def draw_map(self,):
-        fig, ax = plt.subplots(figsize=(10, 10))
+        fig, ax = plt.subplots(figsize=(20, 20))
         ax.set_xlim(-0.5, self.environment.get_size()[1] - 0.5)
         ax.set_ylim(-0.5, self.environment.get_size()[0] - 0.5)
         ax.set_xticks(np.arange(-0.5, self.environment.get_size()[1], 1), minor=True)
@@ -106,6 +106,76 @@ class Visualizer:
         plt.legend(loc='upper right')
         plt.savefig(self.visualization_dir + 'frames/' + filename)
         plt.close()
+
+    def plot_apf_frame(self, frame, robot):
+        fig, ax = self.draw_map()  # eventually move this up to the animation function
+        X = []
+        Y = []
+        for r in range(self.environment.get_size()[0]):
+            for c in range(self.environment.get_size()[1]):
+                X.append(r)
+                Y.append(c)  # same with this
+        # print("X", X)
+
+        self.plot_arrows(ax, frame, robot, X, Y)
+        self.plot_robot(ax, frame, robot)
+        fig.savefig(self.visualization_dir + "apf_frame.png")
+        fig.clear()
+
+    def plot_robot(self, ax, frame, robot):
+        # print(robot.get_path())
+        x = robot.get_path()[frame][0]
+        y = robot.get_path()[frame][1]
+        bot_point = ax.scatter(x, y, marker="o", color="blue", s=50, label="Robots")
+        return bot_point
+
+    def plot_arrows(self, ax, frame, robot, X, Y):
+        U_vals = robot.get_arrow_directions()["U"][frame]
+        # print(U_vals)
+        V_vals = robot.get_arrow_directions()["V"][frame]
+        Q = ax.quiver(X, Y, U_vals, V_vals, pivot="mid", angles="xy")
+        return Q
+
+    def animate_apf(self, robot_id, interval=200, filename="apf_arrows.gif"):
+        """
+        animates the apf for given robot.
+        """
+        fig, ax = self.draw_map()  # Initialize the figure and axes
+        X = []
+        Y = []
+        for r in range(self.environment.get_size()[0]):
+            for c in range(self.environment.get_size()[1]):
+                X.append(r)
+                Y.append(c)
+        robot = self.swarm.actors[robot_id]
+        # print(robot_id)
+
+        quiver_obj = None
+        robot_obj = None
+
+        def update_plot(frame):
+            nonlocal quiver_obj
+            nonlocal robot_obj
+            if quiver_obj:
+                quiver_obj.remove()
+
+            if robot_obj:
+                robot_obj.remove()
+
+            quiver_obj = self.plot_arrows(ax, frame, robot, X, Y)  # Update the arrows
+            robot_obj = self.plot_robot(ax, frame, robot)  # Update the robot position
+            return (fig,)
+
+        # Assuming you have a way to determine the total number of frames
+        num_frames = len(robot.get_arrow_directions()["U"])
+
+        ani = animation.FuncAnimation(
+            fig, update_plot, frames=num_frames, interval=interval, blit=True
+        )
+
+        ani.save(
+            self.visualization_dir + str(robot_id) + "_" + filename, writer="pillow"
+        )
 
     def animate_swarm(self, interval=200, filename='animation.gif', shortenDronePath=False, shortenWPTPath=True):
         """

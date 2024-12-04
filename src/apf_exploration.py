@@ -146,7 +146,7 @@ class AdaptivePotentialField:
         dy = y - yy
         return np.sqrt(dx * dx + dy * dy)
 
-    def compute_gradient(self, robot):
+    def compute_gradient(self, robot, position):
         """
         Computes the gradient of the potential field at the robot's position.
         """
@@ -200,40 +200,74 @@ class AdaptivePotentialField:
 
         for robot in self.swarm.actors.values():
             current_pos = np.array(robot.get_position(), dtype=float)
+            if (robot.get_current_node().get_distance() >= robot.get_remaining_distance()):  # turning back threshold
+                U, V = self.get_arrow_directions(robot, True)
+                if robot.get_current_node().get_parent():  # check if at root
+                    self.swarm.move(
+                        robot.get_id(), robot.get_current_node().get_parent().get_pos()
+                    )  # move the current robot to its parent nodes position
+            else:
+                grad = self.compute_gradient(robot, current_pos)
+                U, V = self.get_arrow_directions(robot, False)
+                # Check for survivor detection within the robot's detection radius
+                # --------------------------------------------- CHECK
+                for survivor in self.environment.get_survivors():
+                    if not survivor.is_found():
+                        dist_to_survivor = np.linalg.norm(current_pos - np.array(survivor.get_position()))
+                        if dist_to_survivor <= robot.detection_radius:
+                            survivor.mark_as_found()
+                            survivor.detected_by.add(robot.get_id())
+                            # Assign the closest robot to the survivor if not already assigned
+                            if survivor.get_position() not in self.assigned_survivors:
+                                self.assign_closest_robot_to_survivor(survivor)
+                            print(f"Survivor at {survivor.get_position()} detected by robot {robot.get_id()}")
+                # --------------------------------------------- CHECK
 
-            # Check for survivor detection within the robot's detection radius
-            for survivor in self.environment.get_survivors():
-                if not survivor.is_found():
-                    dist_to_survivor = np.linalg.norm(current_pos - np.array(survivor.get_position()))
-                    if dist_to_survivor <= robot.detection_radius:
-                        survivor.mark_as_found()
-                        survivor.detected_by.add(robot.get_id())
-                        # Assign the closest robot to the survivor if not already assigned
-                        if survivor.get_position() not in self.assigned_survivors:
-                            self.assign_closest_robot_to_survivor(survivor)
-                        print(f"Survivor at {survivor.get_position()} detected by robot {robot.get_id()}")
+                # Compute the gradient for movement
+                if np.linalg.norm(grad) < 0.1:
+                    grad = np.random.rand(2)  # Skip if gradient is zero
 
-            # Compute the gradient for movement
-            grad = self.compute_gradient(robot)
-            if np.linalg.norm(grad) < 0.1:
-                grad = np.random.rand(2)  # Skip if gradient is zero
+                # if np.linalg.norm(grad) == 0:
+                #     print("zero gradient")
+                #     self.swarm.move(robot.get_id(), tuple(robot.get_position()))
+                #     robot.add_arrow_directions(U, V)
+                #     continue 
 
-            # Move in the negative gradient direction
-            step_size = self.params["step_size"]
-            direction = -grad / np.linalg.norm(grad)
-            new_pos = current_pos + step_size * direction
-            # new_pos = np.round(new_pos).astype(int)  # Assuming grid positions
+                # Move in the negative gradient direction
+                step_size = self.params["step_size"]
+                direction = -grad / np.linalg.norm(grad)
+                new_pos = current_pos + step_size * direction
+                # new_pos = np.round(new_pos).astype(int)  # Assuming grid positions
 
-            # Ensure new_pos is valid
-            size = self.environment.get_size()
-            if (
-                0 <= new_pos[0] < size[0]
-                and 0 <= new_pos[1] < size[1]
-                and not self.environment.obstacle_collision(new_pos)
-                and self.swarm.is_valid_move(tuple(new_pos))
-            ):
-                # Move robot
-                robot.move(tuple(new_pos))
+                # Ensure new_pos is valid
+                size = self.environment.get_size()
+                if (
+                    0 <= new_pos[0] < size[0]
+                    and 0 <= new_pos[1] < size[1]
+                    and not self.environment.obstacle_collision(new_pos)
+                    and self.swarm.is_valid_move(tuple(new_pos))
+                ):
+                    # Move robot
+                    robot.move(tuple(new_pos))
+                # --------------------------------------------- CHECK - removed else
+
+            robot.add_arrow_directions(U, V)
+    
+    def get_arrow_directions(self, robot, backtracking):
+        U = []
+        V = []
+        # want only 50 points evenly spaced
+        for r in range(self.environment.get_size()[0]):
+            for c in range(self.environment.get_size()[1]):
+                if backtracking:  # if turning around no arrows
+                    U.append(0)
+                    V.append(0)
+                else:  # moving forward means get arrow directions
+                    grad = self.compute_gradient(robot, [r, c])
+                    U.append(-1 * float(grad[0]))
+                    V.append(-1 * float(grad[1]))
+
+        return U, V
 
     def assign_closest_robot_to_survivor(self, survivor):
         """
