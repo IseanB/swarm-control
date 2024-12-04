@@ -29,6 +29,7 @@ class Survivor:
         self.position = position
         self.status = "not found"
         self.time_in_env = 0
+        self.detected_by = set()
 
     def get_position(self):
         return self.position
@@ -133,7 +134,7 @@ class Environment:
     def update_occ_map(self, new_pos, radius):
       # if(new_pos[0]<0 or new_pos[1]<0 or new_pos[0]>=self.size[0] or new_pos[1]>=self.size[0]):
       try:
-        x, y = new_pos
+        x, y = (int(new_pos[0]), int(new_pos[0])) 
         size_x, size_y = self.size
         
         # Define bounds within the radius, ensuring they stay within the occupancy map limits
@@ -159,8 +160,11 @@ class Environment:
     def obstacle_collision(self, position):
       """
       Determines whether a point is inside an obstacle.
-      """
-      if (self.occupancy_map[position] == OCCUPANCY_OBSTACLE_VALUE):
+      """ 
+      int_pos = (int(position[0]), int(position[1])) # ---->------------------------------------
+
+      # print("position", position)
+      if (self.occupancy_map[int_pos] == OCCUPANCY_OBSTACLE_VALUE):
         return True
       return False
 

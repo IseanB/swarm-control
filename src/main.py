@@ -14,15 +14,17 @@ from simulator import *
 from apf import *
 from wpt import *
 from evaluate import *
+from apf_exploration import *
+from aoi import *
 
 # Global param.
 
-width = 400
-height = 400
-num_actors = 20
-num_obstacles = 10
+width = 100
+height = 100
+num_actors = 5
+num_obstacles = 3
 max_vertices = 4
-max_size = 100
+max_size = 9
 robot_search_radius = 1 # defined a circle around each robot that is considered "explored"
 visualization_dir = "./visual_results/"
 np.random.seed(1)
@@ -56,6 +58,22 @@ np.random.seed(1)
 # visualization.save_paths(filename='path_random_walk.png') # Generates path.png
 # # visualization.animate_swarm(filename='animation_random_walk.gif') # Generates animation.gif # this causes a lot of slowdowns
 
+def run_ui(environment):
+    flight_area_vertices = define_flight_area(environment)
+    return flight_area_vertices
+
+# APF Params
+params = {
+    'k_att': 10.0,
+    'k_rep': 10.0,
+    'Q_star': 10.0,
+    'delta': 0.5,
+    'step_size': 0.5,
+    'k_exp': 1.0,  # Coefficient for repulsion from explored areas
+    'k_robot_rep': 1.0,  # Coefficient for repulsion between robots
+    'robot_repulsion_distance': 1.0,  # Distance threshold for robot repulsion
+}
+
 # ---------- APF Run ----------
 np.random.seed(120)
 rand_env = Environment((width, height))
@@ -71,21 +89,26 @@ simulator_2 = Simulator(num_actors, rand_env, all_wpts, init='random')
 
 # Define parameters for the potential field
 params = {
-    'k_att': 100.0,    # Attractive potential gain
-    'k_rep': 1.0,  # Repulsive potential gain
-    'Q_star': 10.0,  # Obstacle influence distance
-    'step_size': 1.0, # Step size for robot movement
-    'delta': 1e-2     # Small value for numerical gradient
+    'k_att': 10.0, # 100.0
+    'k_rep': 10.0,
+    'Q_star': 10.0,
+    'delta': 0.5, #  1e-2  
+    'step_size': 0.5, # 1.0
+    'k_exp': 1.0,  # Coefficient for repulsion from explored areas
+    'k_robot_rep': 1.0,  # Coefficient for repulsion between robots
+    'robot_repulsion_distance': 1.0,  # Distance threshold for robot repulsion
 }
 
+flight_area_vertices = run_ui(environment=rand_env)
+
 # Create the potential field planner
-potential_field = AdaptivePotentialField(rand_env, simulator_2, params)
+potential_field = AdaptivePotentialField(rand_env, simulator_2, params, flight_area_vertices)
 
 start_time = time.time()
 
 dt = 1
 # simulator_2.move_with_potential_field(potential_field, steps=200, search_range=robot_search_radius) 
-for i in range(150):
+for i in range(50):
     # simulator_2.basic_move_wpts(0.005)
     simulator_2.move_with_potential_field(potential_field,dt,robot_search_radius)
     simulator_2.autonomous_movement_wpts(omega=30, schedulingHz=4,step_dist=0.005)

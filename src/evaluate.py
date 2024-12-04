@@ -25,8 +25,8 @@ class Evaluator:
         percentage_not_found = 100 - percentage_found
 
         # Total mission time and time spent in recharging procedure for each robot
-        total_mission_time = sum(robot.mission_time for robot in self.swarm.actors)
-        total_recharging_time = sum(robot.recharging_procedure_time for robot in self.swarm.actors)
+        total_mission_time = sum(robot.mission_time for robot in self.swarm.actors.values())
+        total_recharging_time = sum(robot.recharging_procedure_time for robot in self.swarm.actors.values())
         percentage_recharging = (total_recharging_time / total_mission_time) * 100 if total_mission_time else 0
 
         # Display results

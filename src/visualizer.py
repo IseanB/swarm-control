@@ -65,8 +65,8 @@ class Visualizer:
             ax.scatter(x_f, y_f, marker='*', color='green', s=100, label='Survivor Found')
         
         # Plot robots
-        x_r = [bot.get_position()[0] for bot in self.swarm.actors]
-        y_r = [bot.get_position()[1] for bot in self.swarm.actors]
+        x_r = [bot.get_position()[0] for bot in self.swarm.actors.values()]
+        y_r = [bot.get_position()[1] for bot in self.swarm.actors.values()]
         ax.scatter(x_r, y_r, marker='o', color='black', s=20, label='Robots')
         
         # Plot WPTs
@@ -85,7 +85,7 @@ class Visualizer:
 
     def save_paths(self, filename="path.png"):
         fig, ax = self.draw_map()
-        for bot in self.swarm.actors:
+        for bot in self.swarm.actors.values():
             path = bot.get_path()
             if len(path) > 1:
                 x_pos, y_pos = zip(*path)
@@ -97,7 +97,7 @@ class Visualizer:
 
     def save_frames(self, filename="path.png"):
         fig, ax = self.draw_map()
-        for bot in self.swarm.actors:
+        for bot in self.swarm.actors.values():
             path = bot.get_path()
             if len(path) > 1:
                 x_pos, y_pos = zip(*path)
@@ -115,7 +115,7 @@ class Visualizer:
         lines = []
 
         # Create lines for each robot
-        for bot in self.swarm.actors:
+        for bot in self.swarm.actors.values():
             line, = ax.plot([], [], linestyle='-', lw=2)
             lines.append(line)
 
@@ -131,7 +131,7 @@ class Visualizer:
             return lines
 
         def animate_func(i):
-            for line, bot in zip(lines[:len(self.swarm.actors)], self.swarm.actors): #animate robots
+            for line, bot in zip(lines[:len(self.swarm.actors)], self.swarm.actors.values()): #animate robots
                 path = bot.get_path()
                 if(shortenDronePath):
                     if i < len(path) and i < 5:
@@ -162,7 +162,7 @@ class Visualizer:
             return lines
 
         # Determine the number of frames
-        max_steps = max(len(bot.get_path()) for bot in self.swarm.actors)
+        max_steps = max(len(bot.get_path()) for bot in self.swarm.actors.values())
 
         anim = animation.FuncAnimation(
             fig, animate_func, init_func=init,
