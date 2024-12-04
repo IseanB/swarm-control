@@ -162,7 +162,7 @@ class WPTS:
                 break
 
         assignments.sort(key=lambda x: x[0]) # Sort by wpt index
-        print("assignments", assignments)
+        # print("assignments", assignments)
         self.assignments = assignments
         return assignments
 
