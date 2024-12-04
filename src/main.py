@@ -11,7 +11,6 @@ import time
 from environment import *
 from visualizer import *
 from simulator import *
-from apf import *
 from wpt import *
 from evaluate import *
 from apf_exploration import *
