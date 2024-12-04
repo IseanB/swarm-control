@@ -39,7 +39,9 @@ class WPT:
     
     def scene_transformation(self, amplitude=6,b=0.1, in_alpha=None):
         x = self.get_x(in_alpha)
-        y = amplitude*math.sin(x*b)
+        # In order to uncomment below, aka change paths to non linear function, requires refactoring of wpt path planning wr/ target drone. 
+        # y = amplitude*math.sin(x*b) 
+        y = x*b
         pos = np.array([x, y, 0])
 
         # Rotation matrix
