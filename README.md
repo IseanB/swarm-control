@@ -12,6 +12,10 @@
   -  ```pip install seaborn```
   -  ```pip install scipy```
   -  ```pip install networkx```
+  -  ```pip install shapely```
+5. Create a visualization output directory
+  - ```cd path_to_your_project/swarm-control```
+  - ``` mkdir visual_results```
 
 ## Running Simulation
 1. Go to the repository.
