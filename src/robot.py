@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 max_charge = 100  # total battery amount
 
 
-distance_per_charge = 150  # distance that bot can move
+distance_per_charge = 100  # distance that bot can move
 battery_burn = (
     max_charge / distance_per_charge
 )  # the amount of battery cost a movement has
@@ -49,7 +49,6 @@ class Robot:
                 self.pos = new_pos
             return True
         return False
-    
 
     def update_local_explored_map(self):
         """
@@ -92,7 +91,7 @@ class Robot:
 
     def get_battery(self):
         return self.battery
-    
+
     def add_arrow_directions(self, U, V):
         self.arrow_directions["U"].append(U)
         self.arrow_directions["V"].append(V)
@@ -102,7 +101,6 @@ class Robot:
 
     def get_current_node(self):
         return self.current_node
-
 
 
 class Path_Node:
@@ -162,9 +160,9 @@ class Path_Node:
         G = nx.DiGraph()
 
         def add_node_and_edges(node, parent=None):
-            G.add_node(node.pos)
+            G.add_node(tuple(node.pos))
             if parent:
-                G.add_edge(parent.pos, node.pos)
+                G.add_edge(tuple(parent.pos), tuple(node.pos))
             for child in node.children:
                 add_node_and_edges(child, node)
 
