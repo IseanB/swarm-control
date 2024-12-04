@@ -64,8 +64,8 @@ rand_env.add_survivors(5, (width/2, height/2), 200)
 rand_env.add_survivors(10, (width/2, height/2), 400)
 
 all_wpts = WPTS()
-all_wpts.add_wpt((0,200),(10,40,0), math.pi / 4, initial_alpha=0.5)
-all_wpts.add_wpt((0,400),(400,260,0), math.pi, initial_alpha=0.5)
+all_wpts.add_wpt((0,200),(10,40,0), math.pi / 4, initial_alpha=0.7)
+all_wpts.add_wpt((0,400),(400,260,0), math.pi, initial_alpha=0.7)
 # goal call scheduling
 simulator_2 = Simulator(num_actors, rand_env, all_wpts, init='random')
 
@@ -89,7 +89,7 @@ for i in range(150):
     # simulator_2.basic_move_wpts(0.005)
     simulator_2.move_with_potential_field(potential_field,dt,robot_search_radius)
     simulator_2.autonomous_movement_wpts(omega=30, schedulingHz=4,step_dist=0.005)
-    # simulator_2.basic_move_wpts(0.005)
+    
     simulator_2.increment_a_clock()
 
 end_time = time.time()
