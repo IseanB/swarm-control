@@ -28,7 +28,7 @@ class AdaptivePotentialField:
         Computes the attractive potential for the robot. If the robot is assigned to a survivor,
         it is attracted to the survivor's position. Otherwise, it is attracted to unexplored areas.
         """
-        
+
         # Compute the minimum distance to flight areas
         robot_point = Point(position)
         U0 = 1
@@ -41,7 +41,7 @@ class AdaptivePotentialField:
         else:
             # Outside the area of interest, compute distance to polygon
             d = robot_point.distance(self.aoi_polygon)
-            U_att = U0 + 0.5 * self.params['k_att'] * d ** 2
+            U_att = U0 + 0.5 * self.params["k_att"] * d**2
 
         # No assigned survivor, attract to unexplored areas
         unexplored_positions = np.argwhere(robot.local_explored_map == False)
@@ -55,7 +55,15 @@ class AdaptivePotentialField:
             if dist < min_dist:
                 min_dist = dist
         U_att += 0.5 * self.params['k_att'] * min_dist ** 2
-
+        battery_distance = np.linalg.norm(
+            np.array(position) - np.array(robot.get_path()[0])
+        )  # could modify to be the position of the nearest WPT
+        U_att += (
+            self.params["k_bat"]
+            * 1
+            / (robot.get_remaining_distance())
+            * battery_distance
+        )  # battery term
         return U_att
 
     def compute_repulsive_potential(self, position, robot):
@@ -86,7 +94,7 @@ class AdaptivePotentialField:
 
         # Extract the region from the explored_map
         region = explored_map[x_min:x_max, y_min:y_max]
-        
+
         # Sum the values in the region to get the total explored area
         total_explored = np.sum(region)
 
@@ -150,7 +158,7 @@ class AdaptivePotentialField:
         """
         Computes the gradient of the potential field at the robot's position.
         """
-        position = np.array(robot.get_position(), dtype=float)
+        # position = np.array(robot.get_position(), dtype=float)
         delta = self.params['delta']
 
         grad_att = np.zeros(2)
@@ -231,7 +239,7 @@ class AdaptivePotentialField:
                 #     print("zero gradient")
                 #     self.swarm.move(robot.get_id(), tuple(robot.get_position()))
                 #     robot.add_arrow_directions(U, V)
-                #     continue 
+                #     continue
 
                 # Move in the negative gradient direction
                 step_size = self.params["step_size"]
@@ -252,7 +260,7 @@ class AdaptivePotentialField:
                 # --------------------------------------------- CHECK - removed else
 
             robot.add_arrow_directions(U, V)
-    
+
     def get_arrow_directions(self, robot, backtracking):
         U = []
         V = []

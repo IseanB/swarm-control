@@ -53,7 +53,7 @@ class Visualizer:
         for obstacle in self.environment.get_obstacles():
             x, y = zip(*obstacle)
             ax.fill(x, y, color='grey', alpha=0.7)
-        
+
         # Plot survivors
         survivors_found = [s for s in self.environment.get_survivors() if s.is_found()]
         survivors_not_found = [s for s in self.environment.get_survivors() if not s.is_found()]
@@ -63,12 +63,12 @@ class Visualizer:
         if survivors_found:
             x_f, y_f = zip(*[s.get_position() for s in survivors_found])
             ax.scatter(x_f, y_f, marker='*', color='green', s=100, label='Survivor Found')
-        
+
         # Plot robots
         x_r = [bot.get_position()[0] for bot in self.swarm.actors.values()]
         y_r = [bot.get_position()[1] for bot in self.swarm.actors.values()]
         ax.scatter(x_r, y_r, marker='o', color='black', s=20, label='Robots')
-        
+
         # Plot WPTs
         wpt_paths_data = [wpt.get_path() for wpt in self.swarm.wpts.get_wpts()]
         wpt_index = 0
@@ -80,7 +80,7 @@ class Visualizer:
                 y = [point[1] for point in data]
 
                 ax.scatter(x, y, marker='^', s=10, alpha=0.7, label=f'WPT {wpt_index}')
-                
+
         return fig, ax
 
     def save_paths(self, filename="path.png"):
@@ -126,7 +126,7 @@ class Visualizer:
         # print(robot.get_path())
         x = robot.get_path()[frame][0]
         y = robot.get_path()[frame][1]
-        bot_point = ax.scatter(x, y, marker="o", color="blue", s=50, label="Robots")
+        bot_point = ax.scatter(x, y, marker="o", color="blue", s=100, label="Robots")
         return bot_point
 
     def plot_arrows(self, ax, frame, robot, X, Y):
@@ -240,5 +240,5 @@ class Visualizer:
         )
 
         # Save the animation
-        anim.save(self.visualization_dir+  filename, writer='ffmpeg')
+        anim.save(self.visualization_dir + filename, writer="pillow")
         plt.close(fig)

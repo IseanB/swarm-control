@@ -138,14 +138,15 @@ simulator_2 = Simulator(num_actors, rand_env, all_wpts, init='random')
 
 # Define parameters for the potential field
 params = {
-    'k_att': 10.0, # 100.0
-    'k_rep': 10.0,
-    'Q_star': 10.0,
-    'delta': 0.5, #  1e-2  
-    'step_size': 0.5, # 1.0
-    'k_exp': 1.0,  # Coefficient for repulsion from explored areas
-    'k_robot_rep': 1.0,  # Coefficient for repulsion between robots
-    'robot_repulsion_distance': 1.0,  # Distance threshold for robot repulsion
+    "k_att": 10.0,  # 100.0
+    "k_rep": 10.0,
+    "Q_star": 10.0,
+    "delta": 0.5,  #  1e-2
+    "step_size": 0.5,  # 1.0
+    "k_exp": 1.0,  # Coefficient for repulsion from explored areas
+    "k_robot_rep": 1.0,  # Coefficient for repulsion between robots
+    "robot_repulsion_distance": 1.0,  # Distance threshold for robot repulsion
+    "k_bat": 1.0,  # coefficient for battery awareness
 }
 
 
@@ -159,12 +160,12 @@ test_apf_plotter()
 # start_time = time.time()
 
 # dt = 1
-# # simulator_2.move_with_potential_field(potential_field, steps=200, search_range=robot_search_radius) 
+# # simulator_2.move_with_potential_field(potential_field, steps=200, search_range=robot_search_radius)
 # for i in range(50):
 #     # simulator_2.basic_move_wpts(0.005)
 #     simulator_2.move_with_potential_field(potential_field,dt,robot_search_radius)
 #     simulator_2.autonomous_movement_wpts(omega=30, schedulingHz=4,step_dist=0.005)
-    
+
 #     simulator_2.increment_a_clock()
 
 # end_time = time.time()
