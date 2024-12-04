@@ -177,7 +177,13 @@ class Visualizer:
             self.visualization_dir + str(robot_id) + "_" + filename, writer="pillow"
         )
 
-    def animate_swarm(self, interval=200, filename='animation.gif', shortenDronePath=False, shortenWPTPath=True):
+    def animate_swarm(
+        self,
+        interval=200,
+        filename="animation.gif",
+        shortenDronePath=False,
+        shortenWPTPath=True,
+    ):
         """
         Animates the plotting of the swarm.
         """

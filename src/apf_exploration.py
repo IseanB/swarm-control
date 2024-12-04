@@ -259,7 +259,7 @@ class AdaptivePotentialField:
                     and self.swarm.is_valid_move(tuple(new_pos))
                 ):
                     # Move robot
-                    robot.move(tuple(new_pos))
+                    self.swarm.move(robot.get_id(), tuple(new_pos))
                 # --------------------------------------------- CHECK - removed else
             if self.animation_plot:
                 robot.add_arrow_directions(U, V)

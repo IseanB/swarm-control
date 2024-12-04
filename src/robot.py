@@ -138,7 +138,7 @@ class Path_Node:
             return self.parent.find_root()
 
     def depth_first_exists(self, pos):
-        if self.pos == pos:
+        if tuple(self.pos) == tuple(pos):
             # print("found, returning: ", self)
             return self  # Found the node
 

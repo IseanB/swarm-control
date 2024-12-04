@@ -29,6 +29,13 @@ class Evaluator:
         total_recharging_time = sum(robot.recharging_procedure_time for robot in self.swarm.actors.values())
         percentage_recharging = (total_recharging_time / total_mission_time) * 100 if total_mission_time else 0
 
+        # Ending Battery
+        battery_vals = [robot.battery for robot in self.swarm.actors.values()]
+        min_battery = min(battery_vals)
+        max_battery = max(battery_vals)
+        average_battery = sum(battery_vals) / len(self.swarm.actors)
+        dead_bots = sum(1 if val == 0 else 0 for val in battery_vals)
+
         # Display results
         print("---------------------")
         print("Evaluation Metrics:")
@@ -40,3 +47,12 @@ class Evaluator:
         print(f"Time Spent in Recharging Procedure: {total_recharging_time}")
         print(f"Total Mission Time: {total_mission_time}")
         print(f"Percentage Time in Recharging Procedure: {percentage_recharging:.2f}%")
+        print(
+            "Min Battery: ",
+            min_battery,
+            ", Max Battery: ",
+            max_battery,
+            ", Average Battery: ",
+            average_battery,
+        )
+        print("Number of Dead Bots: ", dead_bots)
