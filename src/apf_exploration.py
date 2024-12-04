@@ -14,7 +14,7 @@ class AdaptivePotentialField:
     """
     Implements a gradient planner using adaptive potential fields to guide the swarm to the survivors.
     """
-    def __init__(self, environment, swarm, params, aoi_vertices):
+    def __init__(self, environment, swarm, params, aoi_vertices, animation_plot=False):
         self.environment = environment
         self.swarm = swarm
         self.params = params  # Parameters for potential field
@@ -22,6 +22,7 @@ class AdaptivePotentialField:
         self.assigned_survivors = {}  # Maps survivor positions to assigned robot IDs
         self.aoi_vertices = aoi_vertices
         self.aoi_polygon = Polygon(self.aoi_vertices)
+        self.animation_plot = animation_plot
 
     def compute_attractive_potential(self, position, robot):
         """
@@ -209,14 +210,16 @@ class AdaptivePotentialField:
         for robot in self.swarm.actors.values():
             current_pos = np.array(robot.get_position(), dtype=float)
             if (robot.get_current_node().get_distance() >= robot.get_remaining_distance()):  # turning back threshold
-                U, V = self.get_arrow_directions(robot, True)
+                if self.animation_plot:
+                    U, V = self.get_arrow_directions(robot, True)
                 if robot.get_current_node().get_parent():  # check if at root
                     self.swarm.move(
                         robot.get_id(), robot.get_current_node().get_parent().get_pos()
                     )  # move the current robot to its parent nodes position
             else:
                 grad = self.compute_gradient(robot, current_pos)
-                U, V = self.get_arrow_directions(robot, False)
+                if self.animation_plot:
+                    U, V = self.get_arrow_directions(robot, False)
                 # Check for survivor detection within the robot's detection radius
                 # --------------------------------------------- CHECK
                 for survivor in self.environment.get_survivors():
@@ -258,15 +261,15 @@ class AdaptivePotentialField:
                     # Move robot
                     robot.move(tuple(new_pos))
                 # --------------------------------------------- CHECK - removed else
-
-            robot.add_arrow_directions(U, V)
+            if self.animation_plot:
+                robot.add_arrow_directions(U, V)
 
     def get_arrow_directions(self, robot, backtracking):
         U = []
         V = []
         # want only 50 points evenly spaced
-        for r in range(self.environment.get_size()[0]):
-            for c in range(self.environment.get_size()[1]):
+        for r in np.linspace(0, self.environment.get_size()[0], 25):
+            for c in np.linspace(0, self.environment.get_size()[1], 25):
                 if backtracking:  # if turning around no arrows
                     U.append(0)
                     V.append(0)

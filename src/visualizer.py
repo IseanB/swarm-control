@@ -143,8 +143,8 @@ class Visualizer:
         fig, ax = self.draw_map()  # Initialize the figure and axes
         X = []
         Y = []
-        for r in range(self.environment.get_size()[0]):
-            for c in range(self.environment.get_size()[1]):
+        for r in np.linspace(0, self.environment.get_size()[0], 25):
+            for c in np.linspace(0, self.environment.get_size()[1], 25):
                 X.append(r)
                 Y.append(c)
         robot = self.swarm.actors[robot_id]
