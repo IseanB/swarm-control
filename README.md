@@ -11,7 +11,7 @@
   -  ```pip install matplotlib```
   -  ```pip install seaborn```
   -  ```pip install scipy```
-
+  -  ```pip install networkx```
 
 ## Running Simulation
 1. Go to the repository.

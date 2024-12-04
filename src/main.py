@@ -64,8 +64,8 @@ rand_env.add_survivors(5, (width/2, height/2), 200)
 rand_env.add_survivors(10, (width/2, height/2), 400)
 
 all_wpts = WPTS()
-all_wpts.add_wpt((0,200),(10,40,0), math.pi / 4, initial_alpha=0.7)
-all_wpts.add_wpt((0,400),(400,260,0), math.pi, initial_alpha=0.7)
+all_wpts.add_wpt((0,400),(10,40,0), math.pi / 4, initial_alpha=0.5)
+all_wpts.add_wpt((0,600),(400,260,0), math.pi, initial_alpha=0.6)
 # goal call scheduling
 simulator_2 = Simulator(num_actors, rand_env, all_wpts, init='random')
 
