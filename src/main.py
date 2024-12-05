@@ -66,7 +66,7 @@ def test_apf_plotter():
         width = 10
         height = 10
         num_actors = 4
-        num_obstacles = 1
+        num_obstacles = 5
         max_vertices = 4
         max_size = 5
         np.random.seed(1)
@@ -94,19 +94,19 @@ def test_apf_plotter():
             'robot_repulsion_distance': 1.0,  # Distance threshold for robot repulsion
         }
 
-        potential_field = AdaptivePotentialField(rand_env, test_swarm, params,flight_area_vertices)
+        potential_field = AdaptivePotentialField(rand_env, test_swarm, params,flight_area_vertices, animation_plot=False)
         print("checkpoint 1")
         test_swarm.move_with_potential_field(
-            potential_field, steps=10, search_range=robot_search_radius
+            potential_field, steps=100, search_range=robot_search_radius
         )
         print("checkpoint 2")
         # print("U:", test_swarm.actors[0].get_arrow_directions()["U"][15])
         visualization = Visualizer(rand_env, test_swarm)
         print("checkpoint 3")
-        visualization.animate_apf(0)
-        visualization.animate_apf(1)
-        visualization.animate_apf(2)
-        visualization.animate_apf(3)
+        # visualization.animate_apf(0)
+        # visualization.animate_apf(1)
+        # visualization.animate_apf(2)
+        # visualization.animate_apf(3)
         print("checkpoint 4")
         visualization.animate_swarm(filename="apf_vis.gif")
         print("checkpoint 5")
@@ -139,8 +139,8 @@ simulator_2 = Simulator(num_actors, rand_env, all_wpts, init='random')
 # Define parameters for the potential field
 params = {
     "k_att": 10.0,  # 100.0
-    "k_rep": 10.0,
-    "Q_star": 10.0,
+    "k_rep": 1.0,
+    "Q_star": 15.0,
     "delta": 0.5,  #  1e-2
     "step_size": 0.5,  # 1.0
     "k_exp": 1.0,  # Coefficient for repulsion from explored areas

@@ -75,30 +75,33 @@ class AdaptivePotentialField:
         U_rep = 0
         Q_star = self.params['Q_star']  # Obstacle influence distance
 
-        # Repulsion from obstacles
-        for obstacle in self.environment.get_obstacles():
-            dist = self.compute_distance_point_to_polygon(position, obstacle)
-            if dist <= Q_star and dist != 0:
-                U_rep += 0.5 * self.params['k_rep'] * (1.0 / dist - 1.0 / Q_star) ** 2
+        for y in range(self.environment.occupancy_map.shape[0]):
+            for x in range(self.environment.occupancy_map.shape[0]):
+                # Check if the cell is an obstacle
+                if self.environment.occupancy_map[y, x] == -10:
+                    # Calculate Euclidean distance
+                    dist = np.sqrt((x - position[0])**2 + (y - position[1])**2)
+                    # Check if obstacle is within influence radius
+                    Q_star = self.params['Q_star']
+                    if dist <= Q_star and dist != 0:
+                        # Calculate repulsive potential
+                        U_rep = 0.5 * self.params['k_rep'] * (1.0 / dist - 1.0 / Q_star) ** 2
 
-        # Repulsion from explored areas
-        explored_map = self.swarm.get_global_explored_map()
 
         x, y = int(position[0]), int(position[1])
         half_width = 4 // 2
 
         # Get the bounds of the square region, ensuring they stay within the map limits
         x_min = max(x - half_width, 0)
-        x_max = min(x + half_width + 1, explored_map.shape[0])
+        x_max = min(x + half_width + 1, self.environment.occupancy_map.shape[0])
         y_min = max(y - half_width, 0)
-        y_max = min(y + half_width + 1, explored_map.shape[1])
+        y_max = min(y + half_width + 1, self.environment.occupancy_map.shape[1])
 
         # Extract the region from the explored_map
-        region = explored_map[x_min:x_max, y_min:y_max]
+        region = self.environment.occupancy_map[x_min:x_max, y_min:y_max]
 
         # Sum the values in the region to get the total explored area
         total_explored = np.sum(region)
-
         U_rep += self.params['k_exp'] * total_explored
 
         # Repulsion from other robots
@@ -106,9 +109,7 @@ class AdaptivePotentialField:
             if other_robot.get_id() != robot.get_id():
                 other_position = np.array(other_robot.get_position())
                 dist = np.linalg.norm(position - other_position)
-                # if dist <= self.params['robot_repulsion_distance'] and dist != 0:
                 U_rep += 0.5 * self.params['k_robot_rep'] * (1.0 / dist - 1.0 / self.params['robot_repulsion_distance']) ** 2
-                # print(0.5 * self.params['k_robot_rep'] * (1.0 / dist - 1.0 / self.params['robot_repulsion_distance']) ** 2)
         return U_rep
 
     def compute_distance_point_to_polygon(self, point, polygon):
