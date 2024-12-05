@@ -25,9 +25,12 @@ class Visualizer:
     """
     Handles all visualization-related functionalities.
     """
-    def __init__(self, environment, swarm, visualization_dir=visualization_dir):
+    def __init__(
+        self, environment, swarm, potential_field, visualization_dir=visualization_dir
+    ):
         self.environment = environment
         self.swarm = swarm
+        self.potential_field = potential_field
         self.visualization_dir = visualization_dir
 
     def display_occ_map(self):
@@ -82,6 +85,10 @@ class Visualizer:
 
                 ax.scatter(x, y, marker='^', s=10, alpha=0.7, label=f'WPT {wpt_index}')
 
+        # plot search area
+        x, y = zip(*self.potential_field.aoi_vertices)
+        ax.fill(x, y, color="green", alpha=0.05)
+
         return fig, ax
 
     def save_paths(self, filename="path.png"):
@@ -125,9 +132,13 @@ class Visualizer:
 
     def plot_robot(self, ax, frame, robot):
         # print(robot.get_path())
-        x = robot.get_path()[frame][0]
-        y = robot.get_path()[frame][1]
-        bot_point = ax.scatter(x, y, marker="o", color="blue", s=100, label="Robots")
+        path = robot.get_path()
+        if frame < len(path) and frame < 5:
+            x_pos, y_pos = zip(*path[: frame + 1])
+        if frame < len(path) - 1 and frame >= 5:
+            x_pos, y_pos = zip(*path[frame - 5 : frame + 1])
+
+        bot_point = ax.plot(x_pos, y_pos, color="blue", label="Robot")
         return bot_point
 
     def plot_arrows(self, ax, frame, robot, X, Y):
@@ -249,6 +260,17 @@ class Visualizer:
             interval=interval,
             blit=True,
         )
-        print("Saving Animation")
-        anim.save(self.visualization_dir + filename, writer="pillow")
+        FFMpegWriter = animation.FFMpegWriter(fps=10)
+        anim.save(self.visualization_dir + filename, writer=FFMpegWriter)
         plt.close(fig)
+
+    def save_tree(self, filename="tree.png"):
+        fig, ax = self.draw_map()
+        for bot in self.swarm.actors.values():
+            root = bot.get_current_node().find_root()
+            root.visualize_tree(ax)
+
+        fig.suptitle("Swarm Trees")
+        plt.legend(loc="upper right")
+        plt.savefig(self.visualization_dir + filename)
+        plt.close()

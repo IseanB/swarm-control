@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 max_charge = 100  # total battery amount
 
-
+robot_search_radius = 1
 distance_per_charge = 100  # distance that bot can move
 battery_burn = (
     max_charge / distance_per_charge
@@ -142,7 +142,8 @@ class Path_Node:
             return self.parent.find_root()
 
     def depth_first_exists(self, pos):
-        if tuple(self.pos) == tuple(pos):
+        if np.linalg.norm(np.array(self.pos) - np.array(pos)) < robot_search_radius:
+            # need to look in robot search radius around pos, if distance between self.pos and pos < robot search radius
             # print("found, returning: ", self)
             return self  # Found the node
 
@@ -160,30 +161,44 @@ class Path_Node:
         # print("Root found", root)
         return root.depth_first_exists(pos)
 
-    def visualize_tree(root):
+    def visualize_tree(root, axis):
         G = nx.DiGraph()
+        pos = {}
 
-        def add_node_and_edges(node, parent=None):
-            G.add_node(tuple(node.pos))
+        def add_node_and_edges(pos, node, parent=None):
+            new_node = tuple((float(node.pos[0]), float(node.pos[1])))
+            G.add_node(new_node)
+            pos[new_node] = new_node
             if parent:
-                G.add_edge(tuple(parent.pos), tuple(node.pos))
+                G.add_edge(
+                    (tuple((float(parent.pos[0]), float(parent.pos[1])))),
+                    (tuple((float(node.pos[0]), float(node.pos[1])))),
+                )
             for child in node.children:
-                add_node_and_edges(child, node)
+                add_node_and_edges(pos, child, node)
 
-        add_node_and_edges(root)
+        add_node_and_edges(pos, root)
 
-        pos = nx.spring_layout(G)  # You can experiment with different layouts
+        # pos = {
+        #    node: (x, y) for node, (x, y) in G.nodes(data=True)
+        # }  # You can experiment with different layouts
+
+        # test = {node: node for node in G.nodes(data=True)}
+        # print(test)
+        # print(pos)
+
         nx.draw(
             G,
             pos,
-            with_labels=True,
+            ax=axis,
+            with_labels=False,
             node_size=20,
             node_color="skyblue",
             font_size=5,
             font_weight="bold",
             arrowsize=5,
         )
-        plt.savefig("./visual_results/wpt/tree")
+        # plt.savefig("./visual_results/wpt/tree")
 
     def print_trees(self, level=0):
         """Prints the tree structure in a hierarchical format.

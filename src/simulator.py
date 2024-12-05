@@ -4,7 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib import rc
-rc('animation', html='jshtml')
+
+rc("animation", html="jshtml")
 from scipy.spatial import ConvexHull
 import time
 from robot import *
@@ -22,11 +23,13 @@ visualization_dir = "./visual_results/"
 
 charging_dist = 1
 
+
 class Simulator:
     """
     Swarm class that holds the robots, WPT, and environment
     contains methods to globally move the swarm around
     """
+
     def __init__(self, num_actors, environment, all_wpts, init):
         self.environment = environment
         self.num_actors = num_actors
@@ -73,17 +76,22 @@ class Simulator:
             for survivor in self.environment.get_survivors():
                 if not survivor.is_found():
                     survivor_pos = survivor.get_position()
-                    distance = np.linalg.norm(np.array(bot_pos) - np.array(survivor_pos))
+                    distance = np.linalg.norm(
+                        np.array(bot_pos) - np.array(survivor_pos)
+                    )
                     if distance <= range:
                         survivor.mark_as_found()
                         self.survivors_found += 1
 
-    def autonomous_movement_wpts(self, omega, schedulingHz=10, step_dist=0.005): 
+    def autonomous_movement_wpts(self, omega, schedulingHz=10, step_dist=0.005):
         all_wpts = self.wpts.get_wpts()
-        if self.autonomous_scheduling_clock % schedulingHz == 0 or self.wpts.assignments == []: # reschedule targets for all wpts
+        if (
+            self.autonomous_scheduling_clock % schedulingHz == 0
+            or self.wpts.assignments == []
+        ):  # reschedule targets for all wpts
             self.schedule_WPT(omega)
 
-        if self.wpts.assignments != []: # ensuring no assignments = all drones dead
+        if self.wpts.assignments != []:  # ensuring no assignments = all drones dead
             if self.autonomous_scheduling_clock % schedulingHz != 0:
                 for wpt_index in range(len(all_wpts)):  # move towards assigned drone
                     if wpt_index != self.wpts.assignments[wpt_index][0]:
@@ -124,7 +132,9 @@ class Simulator:
         self.global_explored_map = np.zeros(self.environment.get_size(), dtype=bool)
         # Combine all robots' local maps
         for robot in self.actors.values():
-            self.global_explored_map = np.logical_or(self.global_explored_map, robot.local_explored_map)
+            self.global_explored_map = np.logical_or(
+                self.global_explored_map, robot.local_explored_map
+            )
 
     def get_global_explored_map(self):
         return self.global_explored_map
@@ -134,7 +144,9 @@ class Simulator:
         id = 0
         while len(self.actors) < self.num_actors:
             if self.is_valid_move((0, next_pos)):
-                self.actors[id] = Robot(id, (0, next_pos), sensing_radius=1, detection_radius=1, swarm=self)
+                self.actors[id] = Robot(
+                    id, (0, next_pos), sensing_radius=1, detection_radius=1, swarm=self
+                )
                 id += 1
             else:
                 next_pos += 1
@@ -147,7 +159,9 @@ class Simulator:
                 np.random.randint(0, self.environment.get_size()[1]),
             )
             if self.is_valid_move(pos):
-                self.actors[id] = Robot(id, pos, sensing_radius=1, detection_radius=1, swarm=self)
+                self.actors[id] = Robot(
+                    id, pos, sensing_radius=1, detection_radius=1, swarm=self
+                )
                 id += 1
 
     def wpt_init(self):
@@ -232,7 +246,9 @@ class Simulator:
             for survivor in self.environment.get_survivors():
                 if not survivor.is_found():
                     survivor_pos = survivor.get_position()
-                    distance = np.linalg.norm(np.array(bot_pos) - np.array(survivor_pos))
+                    distance = np.linalg.norm(
+                        np.array(bot_pos) - np.array(survivor_pos)
+                    )
                     if distance <= range:
                         survivor.mark_as_found()
                         self.survivors_found += 1
@@ -267,7 +283,3 @@ class Simulator:
                 bot.mission_time += 1
             for survivor in self.environment.get_survivors():
                 survivor.increment_time()
-
-    def print_tree(self):
-        root = self.actors[0].get_current_node().find_root()
-        root.visualize_tree()
