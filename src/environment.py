@@ -137,7 +137,7 @@ class Environment:
     def update_occ_map(self, new_pos, radius):
         # if(new_pos[0]<0 or new_pos[1]<0 or new_pos[0]>=self.size[0] or new_pos[1]>=self.size[0]):
         try:
-            x, y = (int(new_pos[0]), int(new_pos[0])) 
+            x, y = (int(new_pos[0]), int(new_pos[1])) 
             size_x, size_y = self.size
 
             # Define bounds within the radius, ensuring they stay within the occupancy map limits
@@ -154,8 +154,6 @@ class Environment:
                         self.occupancy_map[i, j] += 1
         except:
             print("ERROR: occupancy_map update FAILED ")
-        #   print(new_pos)
-        #   print(self.size)
 
     def return_occ_map(self):
         return (self.occupancy_map)
@@ -164,9 +162,7 @@ class Environment:
         """
       Determines whether a point is inside an obstacle.
       """ 
-        int_pos = (int(position[0]), int(position[1])) # ---->------------------------------------
-
-        # print("position", position)
+        int_pos = (int(position[0]), int(position[1]))
         if (self.occupancy_map[int_pos] == OCCUPANCY_OBSTACLE_VALUE):
             return True
         return False

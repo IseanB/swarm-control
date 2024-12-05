@@ -96,6 +96,9 @@ class WPTS:
     def get_wpts(self):
         return self.wpts
 
+    def get_assignments(self):
+        return self.assignments
+
     def add_wpt(self, x_val, translation, rotation, initial_alpha):
        self.wpts.append(WPT(x_val, translation, rotation, initial_alpha)) # represents state and ???
 
@@ -146,7 +149,7 @@ class WPTS:
                     distances_to_fr.append((distances[0], drone_pos, wpt_index))
                 wpt_index += 1
 
-            distances_to_fr.sort(key=lambda x: x[0]) # Sort by distance to prioritize closer drones
+            distances_to_fr.sort(key=lambda x: -x[0]) # Sort by distance to prioritize further drones
 
         # Assigning WPTs a drones to go towards
         assigned_wpts = [False] * len(self.wpts)
