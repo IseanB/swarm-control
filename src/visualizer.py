@@ -7,6 +7,7 @@ from matplotlib import rc
 rc('animation', html='jshtml')
 from scipy.spatial import ConvexHull
 import time
+from tqdm import tqdm
 
 # Global param.
 
@@ -241,10 +242,13 @@ class Visualizer:
         max_steps = max(len(bot.get_path()) for bot in self.swarm.actors.values())
 
         anim = animation.FuncAnimation(
-            fig, animate_func, init_func=init,
-            frames=max_steps, interval=interval, blit=True
+            fig,
+            animate_func,
+            init_func=init,
+            frames=tqdm(range(max_steps), "Creating Animation"),
+            interval=interval,
+            blit=True,
         )
-
-        # Save the animation
+        print("Saving Animation")
         anim.save(self.visualization_dir + filename, writer="pillow")
         plt.close(fig)

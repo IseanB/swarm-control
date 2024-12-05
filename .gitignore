@@ -4,4 +4,4 @@ visual_results/wpt/*
 env/
 
 *pycache*
-*.DS_Store*
+*.DS_Store

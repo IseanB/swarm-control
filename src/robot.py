@@ -19,7 +19,7 @@ class Robot:
         self.id = ID
         self.pos = start_pos
         self.path = [start_pos]
-        self.recharging_procedure_time = 0
+        self.num_recharges = 0
         self.mission_time = 0
         self.max_charge = max_charge
         self.battery = 100
@@ -101,6 +101,10 @@ class Robot:
 
     def get_current_node(self):
         return self.current_node
+
+    def charge(self, percent):
+        self.battery = percent
+        self.num_recharges += 1
 
 
 class Path_Node:

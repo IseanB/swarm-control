@@ -18,7 +18,9 @@ num_obstacles = 15
 max_vertices = 4
 max_size = 100
 visualization_dir = "./visual_results/"
-np.random.seed(1)
+
+
+charging_dist = 1
 
 class Simulator:
     """
@@ -92,6 +94,15 @@ class Simulator:
         else:
             for wpt_index in range(len(all_wpts)):  # move towards assigned drone
                 all_wpts[wpt_index].move(0)
+        # check all bots and all
+        for wpt in all_wpts:
+            for bot in self.actors.values():
+                distance = np.linalg.norm(
+                    np.array(bot.get_position()) - np.array(wpt.get_pos())
+                )
+                if distance < charging_dist:
+                    bot.charge(100)
+                    wpt.add_charged()
 
     def schedule_WPT(self, omega):
         # print("self.actors", self.actors)

@@ -26,7 +26,9 @@ class Evaluator:
 
         # Total mission time and time spent in recharging procedure for each robot
         total_mission_time = sum(robot.mission_time for robot in self.swarm.actors.values())
-        total_recharging_time = sum(robot.recharging_procedure_time for robot in self.swarm.actors.values())
+        total_recharging_time = sum(
+            robot.num_recharges for robot in self.swarm.actors.values()
+        )
         percentage_recharging = (total_recharging_time / total_mission_time) * 100 if total_mission_time else 0
 
         # Ending Battery
@@ -35,6 +37,11 @@ class Evaluator:
         max_battery = max(battery_vals)
         average_battery = sum(battery_vals) / len(self.swarm.actors)
         dead_bots = sum(1 if val == 0 else 0 for val in battery_vals)
+
+        # Wpt Stats
+        print_msg_wpt = ""
+        for wpt in self.swarm.wpts.wpts:
+            print_msg_wpt += "Bots Recharged for WPT: " + str(wpt.bots_charged) + " \n"
 
         # Display results
         print("---------------------")
@@ -56,3 +63,4 @@ class Evaluator:
             average_battery,
         )
         print("Number of Dead Bots: ", dead_bots)
+        print(print_msg_wpt)
