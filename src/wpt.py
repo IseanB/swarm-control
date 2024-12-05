@@ -17,6 +17,7 @@ class WPT:
         self.update_alpha(initial_alpha) # initial_alpha is initializing the wpt potition to be (initial_alpha)*100 percent into the path.
         self.pos = self.scene_transformation()
         self.path = [self.pos]
+        self.bots_charged = 0
 
     def get_path(self):
         return self.path
@@ -28,7 +29,7 @@ class WPT:
         if in_alpha is not None:
             return self.x_min*(1-in_alpha) + self.x_max*(in_alpha)
         return self.x_min*(1-self.alpha) + self.x_max*(self.alpha)
-    
+
     def update_alpha(self, new_alpha):
         if(new_alpha<0):
             self.alpha = 0
@@ -36,11 +37,14 @@ class WPT:
             self.alpha = 1
         else:
             self.alpha = new_alpha
-    
+
+    def add_charged(self):
+        self.bots_charged += 1
+
     def scene_transformation(self, amplitude=6,b=0.1, in_alpha=None):
         x = self.get_x(in_alpha)
-        # In order to uncomment below, aka change paths to non linear function, requires refactoring of wpt path planning wr/ target drone. 
-        # y = amplitude*math.sin(x*b) 
+        # In order to uncomment below, aka change paths to non linear function, requires refactoring of wpt path planning wr/ target drone.
+        # y = amplitude*math.sin(x*b)
         y = x*b
         pos = np.array([x, y, 0])
 

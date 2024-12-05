@@ -7,6 +7,7 @@ from matplotlib import rc
 rc('animation', html='jshtml')
 from scipy.spatial import ConvexHull
 import time
+from tqdm import tqdm
 
 # Global param.
 
@@ -18,15 +19,19 @@ max_vertices = 4
 max_size = 100
 robot_search_radius = 1 # defined a circle around each robot that is considered "explored"
 visualization_dir = "./visual_results/"
+num_arrows = 25
 np.random.seed(1)
 
 class Visualizer:
     """
     Handles all visualization-related functionalities.
     """
-    def __init__(self, environment, swarm, visualization_dir=visualization_dir):
+    def __init__(
+        self, environment, swarm, potential_field, visualization_dir=visualization_dir
+    ):
         self.environment = environment
         self.swarm = swarm
+        self.potential_field = potential_field
         self.visualization_dir = visualization_dir
 
     def display_occ_map(self):
@@ -81,6 +86,10 @@ class Visualizer:
 
                 ax.scatter(x, y, marker='^', s=10, alpha=0.7, label=f'WPT {wpt_index}')
 
+        # plot search area
+        x, y = zip(*self.potential_field.aoi_vertices)
+        ax.fill(x, y, color="green", alpha=0.05)
+
         return fig, ax
 
     def save_paths(self, filename="path.png"):
@@ -122,12 +131,16 @@ class Visualizer:
         fig.savefig(self.visualization_dir + "apf_frame.png")
         fig.clear()
 
-    def plot_robot(self, ax, frame, robot):
+    def plot_robot(self, ax, frame, robot, line):
         # print(robot.get_path())
-        x = robot.get_path()[frame][0]
-        y = robot.get_path()[frame][1]
-        bot_point = ax.scatter(x, y, marker="o", color="blue", s=100, label="Robots")
-        return bot_point
+        path = robot.get_path()
+        if frame < len(path) and frame < 5:
+            x_pos, y_pos = zip(*path[: frame + 1])
+            line.set_data(x_pos, y_pos)
+        if frame < len(path) - 1 and frame >= 5:
+            x_pos, y_pos = zip(*path[frame - 5 : frame + 1])
+            line.set_data(x_pos, y_pos)
+        return line
 
     def plot_arrows(self, ax, frame, robot, X, Y):
         U_vals = robot.get_arrow_directions()["U"][frame]
@@ -143,41 +156,49 @@ class Visualizer:
         fig, ax = self.draw_map()  # Initialize the figure and axes
         X = []
         Y = []
-        for r in np.linspace(0, self.environment.get_size()[0], 25):
-            for c in np.linspace(0, self.environment.get_size()[1], 25):
+        for r in np.linspace(0, self.environment.get_size()[0], num_arrows):
+            for c in np.linspace(0, self.environment.get_size()[1], num_arrows):
                 X.append(r)
                 Y.append(c)
         robot = self.swarm.actors[robot_id]
         # print(robot_id)
+        lines = []
+        (line,) = ax.plot([], [], linestyle="-", lw=2)
 
         quiver_obj = None
-        robot_obj = None
 
         def update_plot(frame):
             nonlocal quiver_obj
-            nonlocal robot_obj
+
             if quiver_obj:
                 quiver_obj.remove()
 
-            if robot_obj:
-                robot_obj.remove()
-
             quiver_obj = self.plot_arrows(ax, frame, robot, X, Y)  # Update the arrows
-            robot_obj = self.plot_robot(ax, frame, robot)  # Update the robot position
+            self.plot_robot(ax, frame, robot, line)  # Update the robot position
             return (fig,)
 
         # Assuming you have a way to determine the total number of frames
         num_frames = len(robot.get_arrow_directions()["U"])
 
         ani = animation.FuncAnimation(
-            fig, update_plot, frames=num_frames, interval=interval, blit=True
+            fig,
+            update_plot,
+            frames=tqdm(range(num_frames), "Creating Animation APF Arrows"),
+            interval=interval,
+            blit=True,
         )
 
         ani.save(
             self.visualization_dir + str(robot_id) + "_" + filename, writer="pillow"
         )
 
-    def animate_swarm(self, interval=200, filename='animation.gif', shortenDronePath=False, shortenWPTPath=True):
+    def animate_swarm(
+        self,
+        interval=200,
+        filename="animation.gif",
+        shortenDronePath=False,
+        shortenWPTPath=True,
+    ):
         """
         Animates the plotting of the swarm.
         """
@@ -235,10 +256,24 @@ class Visualizer:
         max_steps = max(len(bot.get_path()) for bot in self.swarm.actors.values())
 
         anim = animation.FuncAnimation(
-            fig, animate_func, init_func=init,
-            frames=max_steps, interval=interval, blit=True
+            fig,
+            animate_func,
+            init_func=init,
+            frames=tqdm(range(max_steps), "Creating Animation"),
+            interval=interval,
+            blit=True,
         )
-
-        # Save the animation
-        anim.save(self.visualization_dir + filename, writer="pillow")
+        FFMpegWriter = animation.FFMpegWriter(fps=10)
+        anim.save(self.visualization_dir + filename, writer=FFMpegWriter)
         plt.close(fig)
+
+    def save_tree(self, filename="tree.png"):
+        fig, ax = self.draw_map()
+        for bot in self.swarm.actors.values():
+            root = bot.get_current_node().find_root()
+            root.visualize_tree(ax)
+
+        fig.suptitle("Swarm Trees")
+        plt.legend(loc="upper right")
+        plt.savefig(self.visualization_dir + filename)
+        plt.close()

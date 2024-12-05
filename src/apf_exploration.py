@@ -10,6 +10,7 @@ from visualizer import *
 from shapely.geometry import Polygon, Point
 from shapely.ops import nearest_points
 
+num_arrows = 25
 class AdaptivePotentialField:
     """
     Implements a gradient planner using adaptive potential fields to guide the swarm to the survivors.
@@ -260,7 +261,7 @@ class AdaptivePotentialField:
                     and self.swarm.is_valid_move(tuple(new_pos))
                 ):
                     # Move robot
-                    robot.move(tuple(new_pos))
+                    self.swarm.move(robot.get_id(), tuple(new_pos))
                 # --------------------------------------------- CHECK - removed else
             if self.animation_plot:
                 robot.add_arrow_directions(U, V)
@@ -269,8 +270,8 @@ class AdaptivePotentialField:
         U = []
         V = []
         # want only 50 points evenly spaced
-        for r in np.linspace(0, self.environment.get_size()[0], 25):
-            for c in np.linspace(0, self.environment.get_size()[1], 25):
+        for r in np.linspace(0, self.environment.get_size()[0], num_arrows):
+            for c in np.linspace(0, self.environment.get_size()[1], num_arrows):
                 if backtracking:  # if turning around no arrows
                     U.append(0)
                     V.append(0)
