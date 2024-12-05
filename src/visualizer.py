@@ -19,6 +19,7 @@ max_vertices = 4
 max_size = 100
 robot_search_radius = 1 # defined a circle around each robot that is considered "explored"
 visualization_dir = "./visual_results/"
+num_arrows = 25
 np.random.seed(1)
 
 class Visualizer:
@@ -130,16 +131,16 @@ class Visualizer:
         fig.savefig(self.visualization_dir + "apf_frame.png")
         fig.clear()
 
-    def plot_robot(self, ax, frame, robot):
+    def plot_robot(self, ax, frame, robot, line):
         # print(robot.get_path())
         path = robot.get_path()
         if frame < len(path) and frame < 5:
             x_pos, y_pos = zip(*path[: frame + 1])
+            line.set_data(x_pos, y_pos)
         if frame < len(path) - 1 and frame >= 5:
             x_pos, y_pos = zip(*path[frame - 5 : frame + 1])
-
-        bot_point = ax.plot(x_pos, y_pos, color="blue", label="Robot")
-        return bot_point
+            line.set_data(x_pos, y_pos)
+        return line
 
     def plot_arrows(self, ax, frame, robot, X, Y):
         U_vals = robot.get_arrow_directions()["U"][frame]
@@ -155,34 +156,36 @@ class Visualizer:
         fig, ax = self.draw_map()  # Initialize the figure and axes
         X = []
         Y = []
-        for r in np.linspace(0, self.environment.get_size()[0], 25):
-            for c in np.linspace(0, self.environment.get_size()[1], 25):
+        for r in np.linspace(0, self.environment.get_size()[0], num_arrows):
+            for c in np.linspace(0, self.environment.get_size()[1], num_arrows):
                 X.append(r)
                 Y.append(c)
         robot = self.swarm.actors[robot_id]
         # print(robot_id)
+        lines = []
+        (line,) = ax.plot([], [], linestyle="-", lw=2)
 
         quiver_obj = None
-        robot_obj = None
 
         def update_plot(frame):
             nonlocal quiver_obj
-            nonlocal robot_obj
+
             if quiver_obj:
                 quiver_obj.remove()
 
-            if robot_obj:
-                robot_obj.remove()
-
             quiver_obj = self.plot_arrows(ax, frame, robot, X, Y)  # Update the arrows
-            robot_obj = self.plot_robot(ax, frame, robot)  # Update the robot position
+            self.plot_robot(ax, frame, robot, line)  # Update the robot position
             return (fig,)
 
         # Assuming you have a way to determine the total number of frames
         num_frames = len(robot.get_arrow_directions()["U"])
 
         ani = animation.FuncAnimation(
-            fig, update_plot, frames=num_frames, interval=interval, blit=True
+            fig,
+            update_plot,
+            frames=tqdm(range(num_frames), "Creating Animation APF Arrows"),
+            interval=interval,
+            blit=True,
         )
 
         ani.save(
