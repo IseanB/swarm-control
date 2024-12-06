@@ -100,6 +100,9 @@ class Environment:
     def set_obstacles(self, obstacles):
         self.obstacles = obstacles
 
+        for obstacle in obstacles:
+            self.mark_obstacle_on_map(obstacle)
+
     def random_obstacles(self, num_obstacles, max_vertex, max_size):
         for _ in range(num_obstacles):
             polygon = self.generate_random_polygon(
