@@ -75,18 +75,17 @@ class AdaptivePotentialField:
         """
         U_rep = 0
         Q_star = self.params['Q_star']  # Obstacle influence distance
-
+        dist_min = np.inf
         for y in range(self.environment.occupancy_map.shape[0]):
             for x in range(self.environment.occupancy_map.shape[0]):
                 # Check if the cell is an obstacle
                 if self.environment.occupancy_map[y, x] == -10:
                     # Calculate Euclidean distance
                     dist = np.sqrt((x - position[0])**2 + (y - position[1])**2)
-                    # Check if obstacle is within influence radius
-                    Q_star = self.params['Q_star']
-                    if dist <= Q_star and dist != 0:
-                        # Calculate repulsive potential
-                        U_rep = 0.5 * self.params['k_rep'] * (1.0 / dist - 1.0 / Q_star) ** 2
+                    dist_min = np.min([dist, dist_min])
+
+        if dist_min < 1000:
+            U_rep = 0.5 * self.params['k_rep'] * (1.0 / dist_min - 1.0 / Q_star) ** 2
 
 
         x, y = int(position[0]), int(position[1])
@@ -102,7 +101,7 @@ class AdaptivePotentialField:
         region = self.environment.occupancy_map[x_min:x_max, y_min:y_max]
 
         # Sum the values in the region to get the total explored area
-        total_explored = np.sum(region)
+        total_explored = np.sum((region>0))
         U_rep += self.params['k_exp'] * total_explored
 
         # Repulsion from other robots
