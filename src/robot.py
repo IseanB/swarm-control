@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 max_charge = 100  # total battery amount
 
 robot_search_radius = 1
-distance_per_charge = 100  # distance that bot can move
+distance_per_charge = 200  # distance that bot can move
 battery_burn = (
     max_charge / distance_per_charge
 )  # the amount of battery cost a movement has

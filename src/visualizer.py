@@ -188,9 +188,7 @@ class Visualizer:
             blit=True,
         )
 
-        ani.save(
-            self.visualization_dir + str(robot_id) + "_" + filename, writer="pillow"
-        )
+        ani.save(self.visualization_dir + filename, writer="pillow")
 
     def animate_swarm(
         self,
