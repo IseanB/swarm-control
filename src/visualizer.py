@@ -188,7 +188,9 @@ class Visualizer:
             blit=True,
         )
 
-        ani.save(self.visualization_dir + filename, writer="pillow")
+        FFMpegWriter = animation.FFMpegWriter(fps=10)
+        ani.save(self.visualization_dir + filename, writer=FFMpegWriter)
+        plt.close(fig)
 
     def animate_swarm(
         self,

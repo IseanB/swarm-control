@@ -19,6 +19,8 @@ class AdaptivePotentialField:
         self.environment = environment
         self.swarm = swarm
         self.params = params  # Parameters for potential field
+        self.obstacle_multiplier = 1
+        self.explore_multiplier = 1
         self.step = 0
         self.assigned_survivors = {}  # Maps survivor positions to assigned robot IDs
         self.aoi_vertices = aoi_vertices
@@ -76,20 +78,27 @@ class AdaptivePotentialField:
         U_rep = 0
         Q_star = self.params['Q_star']  # Obstacle influence distance
         dist_min = np.inf
-        for y in range(self.environment.occupancy_map.shape[0]):
-            for x in range(self.environment.occupancy_map.shape[0]):
+        # could be refactored, using bounds for repulsion influence
+        for x in range(self.environment.occupancy_map.shape[0]):
+            for y in range(self.environment.occupancy_map.shape[1]):
                 # Check if the cell is an obstacle
-                if self.environment.occupancy_map[y, x] == -10:
+                if self.environment.occupancy_map[x, y] <= -10:
                     # Calculate Euclidean distance
                     dist = np.sqrt((x - position[0])**2 + (y - position[1])**2)
                     dist_min = np.min([dist, dist_min])
 
-        if dist_min < 1000:
-            U_rep = 0.5 * self.params['k_rep'] * (1.0 / dist_min - 1.0 / Q_star) ** 2
-
+        if dist_min < Q_star:
+            U_rep = (
+                0.5
+                * self.obstacle_multiplier
+                * self.params["k_rep"]
+                * ((1.0 / dist_min) - (1.0 / Q_star)) ** 2
+            )
+        if dist_min == 0:
+            print(dist_min)
 
         x, y = int(position[0]), int(position[1])
-        half_width = 4 // 2
+        half_width = 2
 
         # Get the bounds of the square region, ensuring they stay within the map limits
         x_min = max(x - half_width, 0)
@@ -100,16 +109,30 @@ class AdaptivePotentialField:
         # Extract the region from the explored_map
         region = self.environment.occupancy_map[x_min:x_max, y_min:y_max]
 
-        # Sum the values in the region to get the total explored area
-        total_explored = np.sum((region>0))
-        U_rep += self.params['k_exp'] * total_explored
+        # loop through the region and add repulsive potential for each explored area
+        # Sum the values in the region to get the total explored area this wont work
+        # needs to be like obstacle ...
+        for x in range(x_min, x_max):
+            for y in range(y_min, y_max):
+                dist = np.sqrt((x - position[0]) ** 2 + (y - position[1]) ** 2)
+                if dist != 0 and self.environment.occupancy_map[x, y] > 0:
+                    U_rep += (
+                        self.explore_multiplier
+                        * self.params["k_exp"]
+                        * ((1.0 / dist) - (1.0 / Q_star))
+                    )  # here
 
         # Repulsion from other robots
         for other_robot in self.swarm.actors.values():
             if other_robot.get_id() != robot.get_id():
                 other_position = np.array(other_robot.get_position())
                 dist = np.linalg.norm(position - other_position)
-                U_rep += 0.5 * self.params['k_robot_rep'] * (1.0 / dist - 1.0 / self.params['robot_repulsion_distance']) ** 2
+                U_rep += (
+                    0.5
+                    * self.params["k_robot_rep"]
+                    * ((1.0 / dist) - (1.0 / self.params["robot_repulsion_distance"]))
+                    ** 2
+                )
         return U_rep
 
     def compute_distance_point_to_polygon(self, point, polygon):
@@ -190,7 +213,7 @@ class AdaptivePotentialField:
 
         # Total gradient
         grad = grad_att + grad_rep
-
+        # print(grad)
         return grad
 
     def compute_next_positions(self):
@@ -250,6 +273,11 @@ class AdaptivePotentialField:
                 direction = -grad / np.linalg.norm(grad)
                 new_pos = current_pos + step_size * direction
                 # new_pos = np.round(new_pos).astype(int)  # Assuming grid positions
+                if len(robot.get_path()) > 2:
+                    if np.linalg.norm(robot.get_path()[-2] - new_pos) < 0.3:
+                        self.explore_multiplier += 5
+                    else:
+                        self.explore_multiplier = 1
 
                 # Ensure new_pos is valid
                 size = self.environment.get_size()
@@ -260,8 +288,16 @@ class AdaptivePotentialField:
                     and self.swarm.is_valid_move(tuple(new_pos))
                 ):
                     # Move robot
+                    self.obstacle_multiplier = 1
                     self.swarm.move(robot.get_id(), tuple(new_pos))
+                    # if dist from path[end-2] to new pos < threshold
+                    # increase the new exploration repulsion
+                else:
+                    self.obstacle_multiplier += 4  # make this a parameter
                 # --------------------------------------------- CHECK - removed else
+            if self.obstacle_multiplier + self.explore_multiplier > 2:
+                print("obstacle", self.obstacle_multiplier)
+                print("explore", self.explore_multiplier)
             if self.animation_plot:
                 robot.add_arrow_directions(U, V)
 
