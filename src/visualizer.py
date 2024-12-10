@@ -42,7 +42,9 @@ class Visualizer:
 
     def save_occ_map(self, filename="occ_map.png"):
         plt.figure(figsize=(10, 8))
-        sns.heatmap(np.rot90(self.environment.return_occ_map()), cmap="PRGn", cbar=False)
+        matrix = self.environment.return_occ_map()
+        matrix = (matrix > 0).astype(int)
+        sns.heatmap(np.rot90(matrix), cmap="PRGn", cbar=False)
         plt.title("Occupied Map")
         plt.savefig(self.visualization_dir + filename)
         plt.close()
