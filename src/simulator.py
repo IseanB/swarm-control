@@ -266,8 +266,9 @@ class Simulator:
                 # print(new_pos)
                 # print("\n")
                 if self.is_valid_move(new_pos):
-                    self.move(bot.get_id(), new_pos)
-                    self.environment.update_occ_map(new_pos, search_range)
+                    moved = self.move(bot.get_id(), new_pos)
+                    if(moved):
+                        self.environment.update_occ_map(new_pos, search_range)
                 bot.mission_time += 1
             self.detect_survivors(range=search_range)
             for survivor in self.environment.get_survivors():
