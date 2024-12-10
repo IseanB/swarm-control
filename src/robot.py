@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 max_charge = 100  # total battery amount
 
 robot_search_radius = 1
-distance_per_charge = 200  # distance that bot can move
+distance_per_charge = 125  # distance that bot can move
 battery_burn = (
     max_charge / distance_per_charge
 )  # the amount of battery cost a movement has
@@ -20,6 +20,7 @@ class Robot:
         self.pos = start_pos
         self.path = [start_pos]
         self.num_recharges = 0
+        self.time_in_backtrack = 0
         self.mission_time = 0
         self.max_charge = max_charge
         self.battery = 100
@@ -105,6 +106,12 @@ class Robot:
     def charge(self, percent):
         self.battery = percent
         self.num_recharges += 1
+
+    def add_time_in_backtrack(self):
+        self.time_in_backtrack += 1
+
+    def get_time_in_backtrack(self):
+        return self.time_in_backtrack
 
 
 class Path_Node:

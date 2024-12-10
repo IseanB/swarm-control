@@ -94,8 +94,6 @@ class AdaptivePotentialField:
                 * self.params["k_rep"]
                 * ((1.0 / dist_min) - (1.0 / Q_star)) ** 2
             )
-        if dist_min == 0:
-            print(dist_min)
 
         x, y = int(position[0]), int(position[1])
         half_width = 2
@@ -240,6 +238,7 @@ class AdaptivePotentialField:
                     self.swarm.move(
                         robot.get_id(), robot.get_current_node().get_parent().get_pos()
                     )  # move the current robot to its parent nodes position
+                    robot.add_time_in_backtrack()
             else:
                 grad = self.compute_gradient(robot, current_pos)
                 if self.animation_plot:
@@ -274,8 +273,11 @@ class AdaptivePotentialField:
                 new_pos = current_pos + step_size * direction
                 # new_pos = np.round(new_pos).astype(int)  # Assuming grid positions
                 if len(robot.get_path()) > 2:
-                    if np.linalg.norm(robot.get_path()[-2] - new_pos) < 0.3:
-                        self.explore_multiplier += 5
+                    if (
+                        np.linalg.norm(robot.get_path()[-2] - new_pos)
+                        < self.params["explore_threshold"]
+                    ):
+                        self.explore_multiplier += self.params["explore_mult"]
                     else:
                         self.explore_multiplier = 1
 
@@ -293,11 +295,13 @@ class AdaptivePotentialField:
                     # if dist from path[end-2] to new pos < threshold
                     # increase the new exploration repulsion
                 else:
-                    self.obstacle_multiplier += 4  # make this a parameter
+                    self.obstacle_multiplier += self.params[
+                        "obs_mult"
+                    ]  # make this a parameter
                 # --------------------------------------------- CHECK - removed else
-            if self.obstacle_multiplier + self.explore_multiplier > 2:
-                print("obstacle", self.obstacle_multiplier)
-                print("explore", self.explore_multiplier)
+            # if self.obstacle_multiplier + self.explore_multiplier > 2:
+            # print("obstacle", self.obstacle_multiplier)
+            # print("explore", self.explore_multiplier)
             if self.animation_plot:
                 robot.add_arrow_directions(U, V)
 

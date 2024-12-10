@@ -171,7 +171,7 @@ class Simulator:
         while len(self.actors) < self.num_actors:
             wpt_obj = self.wpts.get_wpts()[wpt]  # get position wpt
             pos = wpt_obj.scene_transformation(in_alpha=alpha)
-            print(pos)
+            # print(pos)
             self.actors[id] = Robot(
                 id, pos, sensing_radius=1, detection_radius=1, swarm=self
             )
@@ -179,7 +179,7 @@ class Simulator:
             id += 1
             alpha += 1.0 / self.num_actors
 
-        print(self.actors)
+        # print(self.actors)
 
     def move(self, id, new_pos):
         node = self.node_visited(new_pos)
